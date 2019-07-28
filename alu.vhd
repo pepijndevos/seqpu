@@ -9,9 +9,7 @@ entity alu is
     opcode : in std_logic_vector(2 downto 0);
     a : in std_logic;
     b : in std_logic;
-    --ci : in std_logic;
     y : out std_logic
-    --co : out std_logic;
   );
 end alu;
 
@@ -82,7 +80,6 @@ architecture direct of alu is
   signal ci : std_logic;
   signal co : std_logic;
   signal cr : std_logic; -- reset value
-  signal mux1, mux2: std_logic_vector(7 downto 0);
 begin
 
   process(opcode, a, b, ci)
@@ -127,7 +124,7 @@ begin
   begin
     if(rising_edge(clk)) then
       if(rst = '0') then
-        ci <= '0';
+        ci <= cr;
       else
         ci <= co;
       end if;

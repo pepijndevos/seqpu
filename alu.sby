@@ -1,0 +1,15 @@
+[options]
+mode bmc
+depth 12
+
+[engines]
+smtbmc boolector
+
+[script]
+verific -vhdl alu.vhd
+read -formal alu_tb.v
+prep -top testbench
+
+[files]
+alu.vhd
+alu_tb.v

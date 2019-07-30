@@ -10,8 +10,9 @@ module testbench (
   reg [7:0] aval;
   reg [7:0] bval;
   reg [7:0] yval = 0;
+  reg [7:0] cval = 0;
 
-  reg a, b, y;
+  reg a, b, y, c;
 
   assign a = aval[0];
   assign b = bval[0];
@@ -22,7 +23,8 @@ module testbench (
     .opcode(opcode),
     .a(a),
     .b(b),
-    .y(y)
+    .y(y),
+    .c(c)
   );
 
   reg [7:0] counter = 0;
@@ -38,17 +40,18 @@ module testbench (
       bval <= binit;
     end else begin
       if (counter == 8) begin
-        if (opcode == 0) assert(yval == ainit + binit); 
-        if (opcode == 1) assert(yval == ainit - binit); 
-        if (opcode == 2) assert(yval == ainit | binit); 
-        //if (opcode == 3) assert(yval == ainit & binit); 
-        if (opcode == 4) assert(yval == ainit ^ binit); 
-        if (opcode == 5) assert(yval == ~ainit); 
-        if (opcode == 6) assert(yval == ainit ~^ binit); 
+        if (opcode == 0) assert(yval == (ainit + binit) && c == (ainit + binit > 255)); 
+        if (opcode == 1) assert(yval == (ainit - binit)); 
+        if (opcode == 2) assert(yval == (ainit | binit) && c == (|ainit)); 
+        if (opcode == 3) assert(yval == (ainit & binit) && c == (&ainit)); 
+        if (opcode == 4) assert(yval == (ainit ^ binit) && c == (^ainit)); 
+        if (opcode == 5) assert(yval == (ainit ~^ binit) && c == (ainit == binit)); 
+        if (opcode == 6) assert(c == (ainit > binit)); 
       end
       aval <= aval >> 1;
       bval <= bval >> 1;
       yval <= {y, yval[7:1]};
+      cval <= {c, cval[7:1]};
       counter <= counter + 1;
     end
   end

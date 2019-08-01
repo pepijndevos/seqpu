@@ -15,6 +15,7 @@ module testbench (input clk, rst, miso_rom, miso_ram,
     .mosi_rom(mosi_rom),
     .mosi_ram(mosi_ram),
     .cs_rom_n(cs_rom_n),
+    .cs_ram_n(cs_ram_n),
     .hold_rom_n(hold_rom_n)
   );
  
@@ -26,13 +27,13 @@ module testbench (input clk, rst, miso_rom, miso_ram,
 
   sequence READ(mosi);
     (hold_rom_n == 1) throughout (
-      (cs_rom_n == 1'b1) ##1
-      (cs_rom_n == 1'b0) throughout (
+      (cs_rom_n == 1'b1 && cs_ram_n == 1'b1) ##1
+      (cs_rom_n == 1'b0 && cs_ram_n == 1'b1) throughout (
         (mosi == 1'b0)[*6] ##1
         (mosi == 1'b1)[*2] ##1
         (mosi == DUT.accumulator[0])[*24] ##1
-        (1)[*8])) ##1
-    (hold_rom_n == 0);
+        (1)[*8]));// ##1
+    //(hold_rom_n == 0);
   endsequence
 
   assert property (

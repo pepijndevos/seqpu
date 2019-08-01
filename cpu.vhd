@@ -87,11 +87,12 @@ begin
           opcode <= opcode(6 downto 0) & miso_rom;
           if counter = 0 then
             if immediate = '1' and write = '0' then
-              state <= RAM_DATA;
+              state <= RAM_DATA; -- don't actually use ram
+              counter <= to_unsigned(23, 8);
             else
               state <= RAM_CMD;
+              counter <= to_unsigned(7, 8);
             end if;
-            counter <= to_unsigned(7, 8);
           end if;
         when RAM_CMD =>
           hold_rom_n <= '0';
@@ -109,12 +110,15 @@ begin
             counter <= to_unsigned(23, 8);
           end if;
         when RAM_ADDRESS =>
+          hold_rom_n <= '0';
+          cs_ram_n <= '0';
           mosi_ram <= miso_rom;
           if counter = 0 then
             state <= RAM_DATA;
             counter <= to_unsigned(23, 8);
           end if;
         when RAM_DATA =>
+          hold_rom_n <= '0';
           mosi_ram <= y;
           accumulator <= y & accumulator(23 downto 1);
           if write = '1' then

@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity alu is
   port (
     clk : in std_logic;
-    rst : in std_logic;
+    rst_n : in std_logic;
     opcode : in std_logic_vector(2 downto 0);
     a : in std_logic;
     b : in std_logic;
@@ -53,6 +53,10 @@ begin
         y <= '-';
         co <= (a and (not b)) or ((a xnor b) and ci);
         cr <= '0';
+      when "111" => -- a
+        y <= a;
+        co <= '0'; -- clear carry
+        cr <= '-';
       when others =>
         y <= '-';
         co <= '-';
@@ -60,10 +64,10 @@ begin
     end case;
   end process;
 
-  process(clk, rst, cr)
+  process(clk, rst_n, cr)
   begin
     if(rising_edge(clk)) then
-      if(rst = '0') then
+      if(rst_n = '0') then
         ci <= cr;
       else
         ci <= co;

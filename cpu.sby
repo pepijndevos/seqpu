@@ -1,0 +1,16 @@
+[options]
+mode bmc
+depth 66
+
+[engines]
+smtbmc boolector
+
+[script]
+verific -vhdl alu.vhd cpu.vhd
+read -formal cpu_tb.v
+prep -top testbench
+
+[files]
+alu.vhd
+cpu.vhd
+cpu_tb.v

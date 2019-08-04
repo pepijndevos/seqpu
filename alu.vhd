@@ -14,7 +14,7 @@ entity alu is
   );
 end alu;
 
-architecture direct of alu is
+architecture rtl of alu is
   signal ci : std_logic;
   signal co : std_logic;
   signal cr : std_logic; -- reset value
@@ -74,4 +74,4 @@ begin
       end if;
     end if;
   end process;
-end direct;
+end rtl;

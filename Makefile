@@ -1,4 +1,4 @@
-SOURCES=alu.vhd cpu.vhd
+SOURCES=alu.vhd inc.vhd cpu.vhd
 
 ifdef SYMBIOTIC_LICENSE
 		YOSYSARGS=-p "verific -vhdl ${SOURCES}; verific -import $*"

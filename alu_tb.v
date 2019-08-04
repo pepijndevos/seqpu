@@ -1,6 +1,5 @@
 module testbench (
-  input clk, rst,
-  output [7:0] yval
+  input clk, rst
 );
 
   (* anyconst *) reg [7:0] ainit;
@@ -19,7 +18,7 @@ module testbench (
 
   alu dut (
     .clk(clk),
-    .rst(rst),
+    .rst_n(rst),
     .opcode(opcode),
     .a(a),
     .b(b),
@@ -46,7 +45,8 @@ module testbench (
         if (opcode == 3) assert(yval == (ainit & binit) && c == (&ainit)); 
         if (opcode == 4) assert(yval == (ainit ^ binit) && c == (^ainit)); 
         if (opcode == 5) assert(yval == (ainit ~^ binit) && c == (ainit == binit)); 
-        if (opcode == 6) assert(c == (ainit > binit)); 
+        if (opcode == 6) assert(yval == ainit && c == (ainit > binit)); 
+        if (opcode == 7) assert(yval == (ainit << 1)); 
       end
       aval <= aval >> 1;
       bval <= bval >> 1;

@@ -1,0 +1,15 @@
+[options]
+mode bmc
+depth 12
+
+[engines]
+smtbmc boolector
+
+[script]
+verific -vhdl inc.vhd
+read -formal inc_tb.v
+prep -top testbench
+
+[files]
+inc.vhd
+inc_tb.v

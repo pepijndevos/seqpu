@@ -6,152 +6,116 @@ entity cpu is
   port (
     clk : in std_logic;
     rst_n : in std_logic;
-    miso_rom : in std_logic;
-    miso_ram : in std_logic;
-    mosi_rom : out std_logic;
-    mosi_ram : out std_logic;
-    cs_rom_n : out std_logic;
-    cs_ram_n : out std_logic;
-    hold_rom_n : out std_logic;
-    sclk : out std_logic
+    address : out std_logic_vector(15 downto 0);
+    data_in : in std_logic_vector(15 downto 0);
+    data_out : out std_logic_vector(15 downto 0);
+    wren_n : out std_logic
   );
 end cpu;
 
 architecture rtl of cpu is
-  type state_type is (RESET,ROM_CMD, ROM_ADDRESS, ROM_OPCODE, RAM_CMD, RAM_ADDRESS, RAM_DATA);
-  signal accumulator : unsigned(23 downto 0);
+  type state_type is (FETCH, EXECUTE, LOAD, ALU_OP);
   signal state : state_type;
-  signal counter : unsigned(7 downto 0);
-  signal opcode : std_logic_vector(7 downto 0);
+  signal counter : unsigned(3 downto 0);
+  signal op, a, b : std_logic_vector(15 downto 0);
+  signal pc : unsigned(15 downto 0);
+  signal c, y, pcinc, carry: std_logic;
   signal alu_rst_n : std_logic;
-  signal alu_opcode : std_logic_vector(2 downto 0);
-  signal a, b, c, y : std_logic;
-  signal jump, immediate, write : std_logic;
-begin
 
-  with state select alu_rst_n <= '1' when RAM_DATA, '0' when others;
-  alu_opcode <= opcode(2 downto 0);
-  jump <= opcode(3);
-  immediate <= opcode(4);
-  write <= opcode(5);
-  a <= accumulator(0);
+begin
 
   alu1: entity work.alu port map (
     clk => clk,
     rst_n => alu_rst_n,
-    opcode => alu_opcode,
-    a => a,
-    b => b,
+    opcode => op(12 downto 10),
+    a => a(0),
+    b => b(0),
     y => y,
     c => c
   );
 
+  inc1: entity work.inc port map (
+    clk => clk,
+    rst_n => alu_rst_n,
+    a => pc(0),
+    y => pcinc
+  );
+
+  -- "00" & addr        ld [addr], a
+  -- "01" & addr        ld a, [addr]
+  -- "10" & op & lit    op lit, B, A
+  -- "11" & op & '00'   op A, B, A
+  -- "11" & op & '01'   op A, B, B
+  -- "11" & op & '10'   op A, B, void
+  -- "11" & op & '11'   op A, B, PC (if carry)
   process(clk, rst_n)
+    variable alu_out : std_logic_vector(2 downto 0);
+    variable a0, b0, pc0 : std_logic;
   begin
     if (rst_n = '0') then
-      accumulator <= x"555555";
-      state <= RESET;
+      pc <= x"0000";
+      wren_n <= '1';
+      state <= FETCH;
     elsif (rising_edge(clk)) then
       counter <= counter - 1;
       case state is
-        when RESET =>
-          hold_rom_n <= '1';
-          cs_rom_n <= '1';
-          cs_ram_n <= '1';
-          mosi_rom <= '-';
-          mosi_ram <= '-';
-          state <= ROM_CMD;
-          counter <= to_unsigned(7, 8);
-        when ROM_CMD => -- jump to acumulator
-          hold_rom_n <= '1';
-          cs_rom_n <= '0';
-          cs_ram_n <= '1';
-          mosi_ram <= '-';
-          -- x"03" read
-          if counter = 1 or counter = 0 then
-            mosi_rom <= '1';
-          else
-            mosi_rom <= '0';
-          end if;
-          if counter = 0 then
-            state <= ROM_ADDRESS;
-            counter <= to_unsigned(23, 8);
-          end if;
-        when ROM_ADDRESS =>
-          hold_rom_n <= '1';
-          cs_rom_n <= '0';
-          cs_ram_n <= '1';
-          mosi_rom <= accumulator(23);
-          mosi_ram <= '-';
-          accumulator <= accumulator(22 downto 0) & accumulator(23);
-          if counter = 0 then
-            state <= ROM_OPCODE;
-            counter <= to_unsigned(7, 8);
-          end if;
-        when ROM_OPCODE => -- continue from held address
-          hold_rom_n <= '1';
-          cs_rom_n <= '0';
-          cs_ram_n <= '1';
-          mosi_rom <= '-';
-          mosi_ram <= '-';
-          opcode <= opcode(6 downto 0) & miso_rom;
-          if counter = 0 then
-            if immediate = '1' and write = '0' then
-              state <= RAM_DATA; -- don't actually use ram
-              counter <= to_unsigned(23, 8);
-            else
-              state <= RAM_CMD;
-              counter <= to_unsigned(7, 8);
+        when FETCH =>
+          wren_n <= '1';
+          address <= std_logic_vector(pc);
+          state <= EXECUTE;
+        when EXECUTE =>
+          op <= data_in;
+          if data_in(15) = '0' then -- load
+            state <= LOAD;
+            address <= "00" & data_in(13 downto 0);
+            if data_in(14) = '1' then -- ld [addr], a
+              data_out <= a;
+              wren_n <= '0';
+              state <= FETCH;
+            else -- ld a, [addr]
+              wren_n <= '1';
+              state <= LOAD;
+            end if;
+          else -- alu
+            wren_n <= '1';
+            counter <= x"f";
+            state <= ALU_OP;
+            if data_in(14) = '0' then -- literal
+              a <= "00000" & data_in(10 downto 0);
             end if;
           end if;
-        when RAM_CMD =>
-          hold_rom_n <= '0';
-          cs_rom_n <= '0';
-          cs_ram_n <= '0';
-          mosi_rom <= '-';
-          -- x"03" read or x"02" write
-          if counter = 1 then
-            mosi_ram <= '1';
-          elsif counter = 0 then
-            mosi_ram <= not write;
-          else
-            mosi_ram <= '0';
-          end if;
+        when LOAD =>
+          a <= data_in;
+          wren_n <= '1';
+          address <= std_logic_vector(pc);
+          state <= EXECUTE;
+        when ALU_OP =>
+          alu_out := op(14) & op(10 downto 9);
+          case alu_out is
+            when "000" | "001" | "010" | "011" | "100" => -- op A, B, A
+              a0 := y;
+              b0 := b(0);
+              pc0 := pcinc;
+            when "101" => -- op A, B, B
+              a0 := a(0);
+              b0 := y;
+              pc0 := pcinc;
+            when "110" => -- op A, B, void
+              a0 := a(0);
+              b0 := b(0);
+              pc0 := pcinc;
+            when "111" => -- op A, B, PC (if carry)
+              a0 := a(0);
+              b0 := b(0);
+              pc0 := y when carry else pcinc;
+            when others =>
+          end case;
+          a <= a0 & a(15 downto 1);
+          b <= b0 & b(15 downto 1);
+          pc <= pc0 & pc(15 downto 1);
           if counter = 0 then
-            state <= RAM_ADDRESS;
-            counter <= to_unsigned(23, 8);
-          end if;
-        when RAM_ADDRESS =>
-          hold_rom_n <= '1';
-          cs_rom_n <= '0';
-          cs_ram_n <= '0';
-          mosi_rom <= '-';
-          mosi_ram <= miso_rom; -- TODO probably off by one
-          if counter = 0 then
-            state <= RAM_DATA;
-            counter <= to_unsigned(23, 8);
-          end if;
-        when RAM_DATA =>
-          hold_rom_n <= '0';
-          cs_rom_n <= '0';
-          cs_ram_n <= '0';
-          mosi_rom <= '-';
-          mosi_ram <= y;
-          accumulator <= y & accumulator(23 downto 1);
-          if write = '1' then
-            b <= '0';
-          elsif immediate = '1' then
-            b <= miso_rom;
-          else
-            b <= miso_ram;
-          end if;
-          if counter = 0 then
-            if jump = '1' and c = '1' then
-              state <= RESET;
-            else
-              state <= ROM_OPCODE;
-            end if;
-            counter <= to_unsigned(7, 8);
+            carry <= c;
+            state <= FETCH;
           end if;
       end case;
     end if;

@@ -40,14 +40,16 @@ module testbench (input clk, rst, [15:0]data_in,
   (* keep *) reg [3:0] mycounter;
   always @(*) mycounter = DUT.counter;
 
-  (* keep *) reg [3:0] alu_op;
-  always @(*) alu_op = DUT.op[12:10];
-  (* keep *) reg [15:0] alu_res;
-  always @(*) alu_res = alu(alu_op, lasta, lastb);
-
   reg [15:0] lasta;
   reg [15:0] lastb;
   reg [15:0] lastpc;
+
+  (* keep *) reg [2:0] alu_op;
+  always @(*) alu_op = DUT.op[13:11];
+  (* keep *) reg [2:0] alu_type;
+  always @(*) alu_type = {DUT.op[14], DUT.op[10:9]};
+  (* keep *) reg [15:0] alu_res;
+  always @(*) alu_res = alu(alu_op, lasta, lastb);
  
   always @(*) assume(rst == initial_reset);
 
@@ -106,10 +108,12 @@ module testbench (input clk, rst, [15:0]data_in,
     wren_n == 1
   );
 
-  assert property ( // ALU jmpc
+  assert property ( // ALU
     @(posedge clk) DUT.state == 3 && DUT.counter == 0 |=>
     DUT.state == 0 &&
-    (DUT.pc == lastpc+1 || DUT.pc == alu(alu_op, lasta, lastb)) &&
+    (DUT.pc == lastpc+16'd1 || DUT.pc == alu(alu_op, lasta, lastb)) &&
+    (DUT.a == lasta || DUT.a == alu(alu_op, lasta, lastb)) &&
+    (DUT.b == lastb || DUT.b == alu(alu_op, lasta, lastb)) &&
     wren_n == 1
   );
 

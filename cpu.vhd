@@ -21,13 +21,15 @@ architecture rtl of cpu is
   signal pc : unsigned(15 downto 0);
   signal c, y, pcinc, carry: std_logic;
   signal alu_rst_n : std_logic;
-
+  signal debug : std_logic;
+  attribute keep : boolean;
+  attribute keep of debug: signal is true;
 begin
 
   alu1: entity work.alu port map (
     clk => clk,
     rst_n => alu_rst_n,
-    opcode => op(12 downto 10),
+    opcode => op(13 downto 11),
     a => a(0),
     b => b(0),
     y => y,
@@ -109,12 +111,20 @@ begin
             when "111" => -- op A, B, PC (if carry)
               a0 := a(0);
               b0 := b(0);
-              pc0 := y when carry else pcinc;
+              if carry = '1' then
+                pc0 := y;
+              else
+                pc0 := pcinc;
+              end if;
             when others =>
+              a0 := a(0);
+              b0 := b(0);
+              pc0 := pcinc;
           end case;
           a <= a0 & a(15 downto 1);
           b <= b0 & b(15 downto 1);
           pc <= pc0 & pc(15 downto 1);
+          debug <= pc0;
           if counter = 0 then
             carry <= c;
             state <= FETCH;

@@ -55,18 +55,19 @@ begin
     if (rst_n = '0') then
       pc <= x"0000";
       wren_n <= '1';
+      --carry <= '0';
       state <= FETCH;
     elsif (rising_edge(clk)) then
       counter <= counter - 1;
       case state is
         when FETCH =>
+          alu_rst_n <= '0';
           wren_n <= '1';
           address <= std_logic_vector(pc);
           state <= EXECUTE;
         when EXECUTE =>
           op <= data_in;
           if data_in(15) = '0' then -- load
-            state <= LOAD;
             address <= "00" & data_in(13 downto 0);
             if data_in(14) = '1' then -- ld [addr], a
               data_out <= a;
@@ -80,6 +81,7 @@ begin
             wren_n <= '1';
             counter <= x"f";
             state <= ALU_OP;
+            alu_rst_n <= '1';
             if data_in(14) = '0' then -- literal
               a <= "00000" & data_in(10 downto 0);
             end if;
@@ -116,6 +118,7 @@ begin
           if counter = 0 then
             carry <= c;
             state <= FETCH;
+            alu_rst_n <= '0';
           end if;
       end case;
     end if;

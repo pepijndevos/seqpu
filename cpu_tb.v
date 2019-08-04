@@ -1,71 +1,116 @@
-module testbench (input clk, rst, miso_rom, miso_ram,
-                  output reg mosi_rom, mosi_ram, cs_rom_n, cs_ram_n, hold_rom_n
+module testbench (input clk, rst, [15:0]data_in,
+                  output reg [15:0] data_out, [15:0] address
                   );
- 
-  reg initial_reset = 1'b0;
-  (* keep *) reg [2:0] mystate;
-
-  always @(*) mystate = DUT.state;
  
   cpu DUT (
     .rst_n(rst),
     .clk(clk),
-    .miso_rom(miso_rom),
-    .miso_ram(miso_ram),
-    .mosi_rom(mosi_rom),
-    .mosi_ram(mosi_ram),
-    .cs_rom_n(cs_rom_n),
-    .cs_ram_n(cs_ram_n),
-    .hold_rom_n(hold_rom_n)
+    .address(address),
+    .data_out(data_out),
+    .data_in(data_in),
+    .wren_n(wren_n)
   );
+ 
+  function [15:0] alu([2:0] op, [15:0] a, [15:0] b);
+    begin
+      case (op)
+        3'b000: alu = a+b;
+        3'b001: alu = a-b;
+        3'b010: alu = a|b;
+        3'b011: alu = a&b;
+        3'b100: alu = a^b;
+        3'b101: alu = a~^b;
+        3'b110: alu = a;
+        3'b111: alu = a<<1;
+      endcase
+    end
+  endfunction
+
+  reg initial_reset = 1'b0;
+  (* keep *) reg [2:0] mystate;
+  always @(*) mystate = DUT.state;
+  (* keep *) reg [15:0] mya;
+  always @(*) mya = DUT.a;
+  (* keep *) reg [15:0] myb;
+  always @(*) myb = DUT.b;
+  (* keep *) reg [15:0] myop;
+  always @(*) myop = DUT.op;
+  (* keep *) reg [15:0] mypc;
+  always @(*) mypc = DUT.pc;
+  (* keep *) reg [3:0] mycounter;
+  always @(*) mycounter = DUT.counter;
+
+  (* keep *) reg [3:0] alu_op;
+  always @(*) alu_op = DUT.op[12:10];
+  (* keep *) reg [15:0] alu_res;
+  always @(*) alu_res = alu(alu_op, lasta, lastb);
+
+  reg [15:0] lasta;
+  reg [15:0] lastb;
+  reg [15:0] lastpc;
  
   always @(*) assume(rst == initial_reset);
 
   always @(posedge clk) begin
     initial_reset <= 1'b1;
+    if (DUT.state == 3 && $past(DUT.state) != 3) begin
+      lasta <= DUT.a;
+      lastb <= DUT.b;
+      lastpc <= DUT.pc;
+    end
   end
 
-  sequence ROM_CMD;
-    (hold_rom_n == 1 &&
-     cs_rom_n == 0 &&
-     cs_ram_n == 1) throughout (
-        (mosi_rom == 1'b0)[*6] ##1
-        (mosi_rom == 1'b1)[*2]) ##1
-    ROM_ADDRESS;
-  endsequence
-
-  sequence ROM_ADDRESS;
-    (hold_rom_n == 1 &&
-     cs_rom_n == 0 &&
-     cs_ram_n == 1) throughout (
-        (mosi_rom == DUT.accumulator[0])[*24]) ##1
-    ROM_OPCODE;
-  endsequence
-
-  sequence ROM_OPCODE;
-    (hold_rom_n == 1 &&
-     cs_rom_n == 0 &&
-     cs_ram_n == 1) throughout (
-        (1)[*8]) ##1
-    RAM_CMD;
-  endsequence
-
-  sequence RAM_CMD;
-    (hold_rom_n == 0 &&
-     cs_rom_n == 0 &&
-     cs_ram_n == 0) throughout (
-        (mosi_rom == 1'b0)[*6] ##1
-        (mosi_rom == 1'b1) ##1
-        (mosi_rom == DUT.opcode[5]));
-  endsequence
-
   assert property (
-    @(posedge clk) $rose(rst) |=>  cs_rom_n == 1'b1 ##1 DUT.state == 1);
+    @(posedge clk) $rose(rst) |-> DUT.state == 0);
 
-  assert property (
-    @(posedge clk) DUT.state != 1 ##1 DUT.state == 1 |=> ROM_CMD);
+  assert property ( // FETCH
+    @(posedge clk) rst && DUT.state == 0 |=>
+    DUT.state == 1 &&
+    address == DUT.pc &&
+    wren_n == 1
+  );
 
-  assert property (
-    @(posedge clk) DUT.state != 4 ##1 DUT.state == 4 |=> RAM_CMD);
+  assert property ( // EXECUTE ld [addr], A
+    @(posedge clk) DUT.state == 1 && data_in[15:14] == 0 |=>
+    DUT.state == 2 && // LOAD
+    address == DUT.op[13:0] && // read address
+    wren_n == 1
+  );
+
+  assert property ( // EXECUTE ld A, [addr]
+    @(posedge clk) DUT.state == 1 && data_in[15:14] == 1 |=>
+    DUT.state == 0 && // FETCH
+    address == DUT.op[13:0] && // write address
+    data_out == DUT.a &&
+    wren_n == 0
+  );
+
+  assert property ( // EXECUTE op lit B A
+    @(posedge clk) DUT.state == 1 && data_in[15:14] == 2 |=>
+    DUT.state == 3 && // ALU
+    DUT.a == DUT.op[10:0] &&
+    wren_n == 1
+  );
+
+  assert property ( // EXECUTE op A B R
+    @(posedge clk) DUT.state == 1 && data_in[15:14] == 3 |=>
+    DUT.state == 3 && // ALU
+    wren_n == 1
+  );
+
+  assert property ( // LOAD
+    @(posedge clk) DUT.state == 2 |=>
+    DUT.state == 1 &&
+    DUT.a == $past(data_in) &&
+    address == DUT.pc &&
+    wren_n == 1
+  );
+
+  assert property ( // ALU jmpc
+    @(posedge clk) DUT.state == 3 && DUT.counter == 0 |=>
+    DUT.state == 0 &&
+    (DUT.pc == lastpc+1 || DUT.pc == alu(alu_op, lasta, lastb)) &&
+    wren_n == 1
+  );
 
 endmodule

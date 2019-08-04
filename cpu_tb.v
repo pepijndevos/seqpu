@@ -25,21 +25,47 @@ module testbench (input clk, rst, miso_rom, miso_ram,
     initial_reset <= 1'b1;
   end
 
-  sequence READ(mosi);
-    (hold_rom_n == 1) throughout (
-      (cs_rom_n == 1'b1 && cs_ram_n == 1'b1) ##1
-      (cs_rom_n == 1'b0 && cs_ram_n == 1'b1) throughout (
-        (mosi == 1'b0)[*6] ##1
-        (mosi == 1'b1)[*2] ##1
-        (mosi == DUT.accumulator[0])[*24] ##1
-        (1)[*8]));// ##1
-    //(hold_rom_n == 0);
+  sequence ROM_CMD;
+    (hold_rom_n == 1 &&
+     cs_rom_n == 0 &&
+     cs_ram_n == 1) throughout (
+        (mosi_rom == 1'b0)[*6] ##1
+        (mosi_rom == 1'b1)[*2]) ##1
+    ROM_ADDRESS;
+  endsequence
+
+  sequence ROM_ADDRESS;
+    (hold_rom_n == 1 &&
+     cs_rom_n == 0 &&
+     cs_ram_n == 1) throughout (
+        (mosi_rom == DUT.accumulator[0])[*24]) ##1
+    ROM_OPCODE;
+  endsequence
+
+  sequence ROM_OPCODE;
+    (hold_rom_n == 1 &&
+     cs_rom_n == 0 &&
+     cs_ram_n == 1) throughout (
+        (1)[*8]) ##1
+    RAM_CMD;
+  endsequence
+
+  sequence RAM_CMD;
+    (hold_rom_n == 0 &&
+     cs_rom_n == 0 &&
+     cs_ram_n == 0) throughout (
+        (mosi_rom == 1'b0)[*6] ##1
+        (mosi_rom == 1'b1) ##1
+        (mosi_rom == DUT.opcode[5]));
   endsequence
 
   assert property (
-    @(posedge clk) !rst ##1 rst |-> READ(mosi_rom));
+    @(posedge clk) $rose(rst) |=>  cs_rom_n == 1'b1 ##1 DUT.state == 1);
 
   assert property (
-    @(posedge clk) DUT.state != 0 ##1 DUT.state == 0 |-> READ(mosi_rom));
+    @(posedge clk) DUT.state != 1 ##1 DUT.state == 1 |=> ROM_CMD);
+
+  assert property (
+    @(posedge clk) DUT.state != 4 ##1 DUT.state == 4 |=> RAM_CMD);
 
 endmodule

@@ -18,7 +18,7 @@ entity cpu is
 end cpu;
 
 architecture rtl of cpu is
-  type state_type is (ROM_CMD, ROM_ADDRESS, ROM_OPCODE, RAM_CMD, RAM_ADDRESS, RAM_DATA);
+  type state_type is (RESET,ROM_CMD, ROM_ADDRESS, ROM_OPCODE, RAM_CMD, RAM_ADDRESS, RAM_DATA);
   signal accumulator : unsigned(23 downto 0);
   signal state : state_type;
   signal counter : unsigned(7 downto 0);
@@ -50,18 +50,23 @@ begin
   begin
     if (rst_n = '0') then
       accumulator <= x"555555";
-      hold_rom_n <= '1';
-      --hold_ram_n <= '1';
-      cs_rom_n <= '1';
-      cs_ram_n <= '1';
-      state <= ROM_CMD;
-      counter <= to_unsigned(7, 8);
+      state <= RESET;
     elsif (rising_edge(clk)) then
       counter <= counter - 1;
       case state is
-        when ROM_CMD => -- jump to acumulator
-          cs_rom_n <= '0';
+        when RESET =>
           hold_rom_n <= '1';
+          cs_rom_n <= '1';
+          cs_ram_n <= '1';
+          mosi_rom <= '-';
+          mosi_ram <= '-';
+          state <= ROM_CMD;
+          counter <= to_unsigned(7, 8);
+        when ROM_CMD => -- jump to acumulator
+          hold_rom_n <= '1';
+          cs_rom_n <= '0';
+          cs_ram_n <= '1';
+          mosi_ram <= '-';
           -- x"03" read
           if counter = 1 or counter = 0 then
             mosi_rom <= '1';
@@ -73,17 +78,22 @@ begin
             counter <= to_unsigned(23, 8);
           end if;
         when ROM_ADDRESS =>
-          cs_rom_n <= '0';
           hold_rom_n <= '1';
+          cs_rom_n <= '0';
+          cs_ram_n <= '1';
           mosi_rom <= accumulator(23);
+          mosi_ram <= '-';
           accumulator <= accumulator(22 downto 0) & accumulator(23);
           if counter = 0 then
             state <= ROM_OPCODE;
             counter <= to_unsigned(7, 8);
           end if;
         when ROM_OPCODE => -- continue from held address
-          cs_rom_n <= '0';
           hold_rom_n <= '1';
+          cs_rom_n <= '0';
+          cs_ram_n <= '1';
+          mosi_rom <= '-';
+          mosi_ram <= '-';
           opcode <= opcode(6 downto 0) & miso_rom;
           if counter = 0 then
             if immediate = '1' and write = '0' then
@@ -96,7 +106,9 @@ begin
           end if;
         when RAM_CMD =>
           hold_rom_n <= '0';
+          cs_rom_n <= '0';
           cs_ram_n <= '0';
+          mosi_rom <= '-';
           -- x"03" read or x"02" write
           if counter = 1 then
             mosi_ram <= '1';
@@ -110,15 +122,20 @@ begin
             counter <= to_unsigned(23, 8);
           end if;
         when RAM_ADDRESS =>
-          hold_rom_n <= '0';
+          hold_rom_n <= '1';
+          cs_rom_n <= '0';
           cs_ram_n <= '0';
-          mosi_ram <= miso_rom;
+          mosi_rom <= '-';
+          mosi_ram <= miso_rom; -- TODO probably off by one
           if counter = 0 then
             state <= RAM_DATA;
             counter <= to_unsigned(23, 8);
           end if;
         when RAM_DATA =>
           hold_rom_n <= '0';
+          cs_rom_n <= '0';
+          cs_ram_n <= '0';
+          mosi_rom <= '-';
           mosi_ram <= y;
           accumulator <= y & accumulator(23 downto 1);
           if write = '1' then
@@ -129,8 +146,8 @@ begin
             b <= miso_ram;
           end if;
           if counter = 0 then
-            if jump = '1' then -- TODO and carry
-              state <= ROM_CMD;
+            if jump = '1' and c = '1' then
+              state <= RESET;
             else
               state <= ROM_OPCODE;
             end if;

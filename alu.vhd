@@ -49,14 +49,14 @@ begin
         y <= a xnor b; -- xnor
         co <= (a xnor b) and ci; -- a=b
         cr <= '1';
-      when "110" => -- a > b
-        y <= '-';
-        co <= (a and (not b)) or ((a xnor b) and ci);
+      when "110" =>
+        y <= a; -- a
+        co <= (a and (not b)) or ((a xnor b) and ci); -- a > b
         cr <= '0';
-      when "111" => -- a
-        y <= a;
-        co <= '0'; -- clear carry
-        cr <= '-';
+      when "111" => -- a << 1
+        y <= ci;
+        co <= a;
+        cr <= '0';
       when others =>
         y <= '-';
         co <= '-';

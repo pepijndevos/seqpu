@@ -26,7 +26,7 @@ begin
   alu1: entity work.alu port map (
     clk => clk,
     rst_n => alu_rst_n,
-    opcode => op(13 downto 11),
+    opcode => op(11 downto 9),
     a => a(0),
     b => b(0),
     y => y,
@@ -40,21 +40,24 @@ begin
     y => pcinc
   );
 
-  -- "00" & addr        ld [addr], a
-  -- "01" & addr        ld a, [addr]
-  -- "10" & op & lit    op lit, B, A
-  -- "11" & op & '00'   op A, B, A
-  -- "11" & op & '01'   op A, B, B
-  -- "11" & op & '10'   op A, B, void
-  -- "11" & op & '11'   op A, B, PC (if carry)
+  -- "00" & lit         ld lit, b
+  -- "010"              ld a, [b]
+  -- "011"              ld [b], a
+  -- "1000" & op        op A, B, A
+  -- "1001" & op        op A, B, B
+  -- "1010" & op        op A, B, PC
+  -- "1011" & op        op A, B, PC (if carry)
+  -- "1100" & op & lit  op A, lit, A
+  -- "1101" & op & lit  op A, lit, B
+  -- "1110" & op & lit  op A, lit, PC
+  -- "1111" & op & lit  op A, lit, PC (if carry)
   process(clk, rst_n)
-    variable alu_out : std_logic_vector(2 downto 0);
     variable a0, b0, pc0 : std_logic;
   begin
     if (rst_n = '0') then
       pc <= x"0000";
       wren_n <= '1';
-      --carry <= '0';
+      carry <= '0';
       state <= FETCH;
     elsif (rising_edge(clk)) then
       counter <= counter - 1;
@@ -67,54 +70,77 @@ begin
         when EXECUTE =>
           op <= data_in;
           if data_in(15) = '0' then -- load
-            address <= "00" & data_in(13 downto 0);
-            if data_in(14) = '1' then -- ld [addr], a
-              data_out <= a;
-              wren_n <= '0';
-              state <= FETCH;
-            else -- ld a, [addr]
+            if data_in(14) = '0' then -- literal load
+              b <= "00" & data_in(13 downto 0);
               wren_n <= '1';
-              state <= LOAD;
+              address <= (others => '-');
+              data_out <= (others => '-');
+              counter <= x"f";
+              alu_rst_n <= '1';
+              state <= ALU_OP;
+            else -- indirect load
+              address <= b;
+              data_out <= a;
+              if data_in(13) = '0' then -- ld a, [b]
+                wren_n <= '0';
+                counter <= x"f";
+                alu_rst_n <= '1';
+                state <= ALU_OP;
+              else -- ld [b], a
+                address <= b;
+                wren_n <= '1';
+                state <= LOAD;
+              end if;
             end if;
           else -- alu
             wren_n <= '1';
-            counter <= x"f";
-            state <= ALU_OP;
-            alu_rst_n <= '1';
-            if data_in(14) = '0' then -- literal
-              a <= "00000" & data_in(10 downto 0);
+            address <= (others => '-');
+            data_out <= (others => '-');
+            if data_in(14) = '1' then -- literal
+              b <= (others => data_in(7)); -- sign extend
+              b(7 downto 0) <= data_in(7 downto 0);
             end if;
+            counter <= x"f";
+            alu_rst_n <= '1';
+            state <= ALU_OP;
           end if;
         when LOAD =>
           a <= data_in;
           wren_n <= '1';
-          address <= std_logic_vector(pc);
-          state <= EXECUTE;
+          counter <= x"f";
+          alu_rst_n <= '1';
+          state <= ALU_OP;
         when ALU_OP =>
-          alu_out := op(14) & op(10 downto 9);
-          case alu_out is
-            when "000" | "001" | "010" | "011" | "100" => -- op A, B, A
-              a0 := y;
-              b0 := b(0);
-              pc0 := pcinc;
-            when "101" => -- op A, B, B
-              a0 := a(0);
-              b0 := y;
-              pc0 := pcinc;
-            when "110" => -- op A, B, void
-              a0 := a(0);
-              b0 := b(0);
-              pc0 := pcinc;
-            when "111" => -- op A, B, PC (if carry)
-              a0 := a(0);
-              b0 := b(0);
-              if carry = '1' then
-                pc0 := y;
-              else
+          wren_n <= '1';
+          if op(15) = '0' then -- load
+            a0 := a(0);
+            b0 := b(0);
+            pc0 := pcinc;
+          else
+            case op(13 downto 12) is
+              when "00" => -- op A, B, A
+                a0 := y;
+                b0 := b(0);
                 pc0 := pcinc;
-              end if;
-            when others =>
-          end case;
+              when "01" => -- op A, B, B
+                a0 := a(0);
+                b0 := y;
+                pc0 := pcinc;
+              when "10" => -- op A, B, PC
+                a0 := a(0);
+                b0 := b(0);
+                pc0 := y;
+              when "11" => -- op A, B, PC (if carry)
+                a0 := a(0);
+                b0 := b(0);
+                if carry = '1' then
+                  pc0 := y;
+                else
+                  pc0 := pcinc;
+                end if;
+              when others =>
+            end case;
+          end if;
           a <= a0 & a(15 downto 1);
           b <= b0 & b(15 downto 1);
           pc <= pc0 & pc(15 downto 1);

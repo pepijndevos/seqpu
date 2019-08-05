@@ -49,7 +49,7 @@ begin
         co <= a xor ci;
         cr <= '0';
       when "101" =>
-        y <= a xnor b; -- xnor
+        y <= b; -- b
         co <= (a xnor b) and ci; -- a=b
         cr <= '1';
       when "110" =>

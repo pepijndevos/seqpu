@@ -19,7 +19,7 @@ module testbench (input clk, rst, [15:0]data_in,
         3'b010: alu = a|b;
         3'b011: alu = a&b;
         3'b100: alu = a^b;
-        3'b101: alu = a~^b;
+        3'b101: alu = b;
         3'b110: alu = a;
         3'b111: alu = a<<1;
       endcase
@@ -45,9 +45,7 @@ module testbench (input clk, rst, [15:0]data_in,
   reg [15:0] lastpc;
 
   (* keep *) reg [2:0] alu_op;
-  always @(*) alu_op = DUT.op[13:11];
-  (* keep *) reg [2:0] alu_type;
-  always @(*) alu_type = {DUT.op[14], DUT.op[10:9]};
+  always @(*) alu_op = DUT.op[11:9];
   (* keep *) reg [15:0] alu_res;
   always @(*) alu_res = alu(alu_op, lasta, lastb);
  
@@ -72,39 +70,45 @@ module testbench (input clk, rst, [15:0]data_in,
     wren_n == 1
   );
 
-  assert property ( // EXECUTE ld [addr], A
-    @(posedge clk) DUT.state == 1 && data_in[15:14] == 0 |=>
-    DUT.state == 2 && // LOAD
-    address == DUT.op[13:0] && // read address
+  assert property ( // EXECUTE ld lit, B
+    @(posedge clk) DUT.state == 1 && data_in[15:14] == 2'b00 |=>
+    DUT.state == 3 && // ALU
+    DUT.b == DUT.op[13:0] && // read address
     wren_n == 1
   );
 
-  assert property ( // EXECUTE ld A, [addr]
-    @(posedge clk) DUT.state == 1 && data_in[15:14] == 1 |=>
-    DUT.state == 0 && // FETCH
-    address == DUT.op[13:0] && // write address
+  assert property ( // EXECUTE ld A, [B]
+    @(posedge clk) DUT.state == 1 && data_in[15:13] == 3'b010 |=>
+    DUT.state == 3 && // ALU
+    address == DUT.b && // write address
     data_out == DUT.a &&
     wren_n == 0
   );
 
-  assert property ( // EXECUTE op lit B A
-    @(posedge clk) DUT.state == 1 && data_in[15:14] == 2 |=>
+  assert property ( // EXECUTE ld [B], A
+    @(posedge clk) DUT.state == 1 && data_in[15:13] == 3'b011 |=>
+    DUT.state == 2 && // LOAD
+    address == DUT.b && // read address
+    wren_n == 1
+  );
+
+  assert property ( // EXECUTE op A lit R
+    @(posedge clk) DUT.state == 1 && data_in[15:14] == 2'b11 |=>
     DUT.state == 3 && // ALU
-    DUT.a == DUT.op[10:0] &&
+    DUT.b == {{8{DUT.op[7]}}, DUT.op[7:0]} &&
     wren_n == 1
   );
 
   assert property ( // EXECUTE op A B R
-    @(posedge clk) DUT.state == 1 && data_in[15:14] == 3 |=>
+    @(posedge clk) DUT.state == 1 && data_in[15:14] == 2'b10 |=>
     DUT.state == 3 && // ALU
     wren_n == 1
   );
 
   assert property ( // LOAD
     @(posedge clk) DUT.state == 2 |=>
-    DUT.state == 1 &&
+    DUT.state == 3 && // ALU
     DUT.a == $past(data_in) &&
-    address == DUT.pc &&
     wren_n == 1
   );
 

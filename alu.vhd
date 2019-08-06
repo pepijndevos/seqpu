@@ -67,7 +67,7 @@ begin
     end case;
   end process;
 
-  process(clk, rst_n, cr)
+  process(clk, rst_n)
   begin
     if(rising_edge(clk)) then
       if(rst_n = '0') then

@@ -56,6 +56,13 @@ begin
   begin
     if (rst_n = '0') then
       pc <= x"0000";
+      op <= x"0000";
+      a <= x"0000";
+      b <= x"0000";
+      data_out <= x"0000";
+      address <= x"0000";
+      counter <= x"0";
+      alu_rst_n <= '0';
       wren_n <= '1';
       carry <= '0';
       state <= FETCH;
@@ -73,8 +80,8 @@ begin
             if data_in(14) = '0' then -- literal load
               b <= "00" & data_in(13 downto 0);
               wren_n <= '1';
-              address <= (others => '-');
-              data_out <= (others => '-');
+              --address <= (others => '-');
+              --data_out <= (others => '-');
               counter <= x"f";
               alu_rst_n <= '1';
               state <= ALU_OP;
@@ -94,8 +101,8 @@ begin
             end if;
           else -- alu
             wren_n <= '1';
-            address <= (others => '-');
-            data_out <= (others => '-');
+            --address <= (others => '-');
+            --data_out <= (others => '-');
             if data_in(14) = '1' then -- literal
               b <= (others => data_in(7)); -- sign extend
               b(7 downto 0) <= data_in(7 downto 0);

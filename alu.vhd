@@ -49,17 +49,17 @@ begin
         co <= a xor ci;
         cr <= '0';
       when "101" =>
-        y <= b; -- b
+        y <= (a xnor b); -- xnor
         co <= (a xnor b) and ci; -- a=b
         cr <= '1';
       when "110" =>
         y <= a; -- a
         co <= (a and (not b)) or ((a xnor b) and ci); -- a > b
         cr <= '0';
-      when "111" => -- a << 1
-        y <= ci;
-        co <= a;
-        cr <= '0';
+      when "111" => -- b
+        y <= b;
+        co <= '0';
+        cr <= '1';
       when others =>
         y <= '-';
         co <= '-';

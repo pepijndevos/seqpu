@@ -44,9 +44,9 @@ module testbench (
         if (opcode == 2) assert(yval == (ainit | binit) && c == (|ainit)); 
         if (opcode == 3) assert(yval == (ainit & binit) && c == (&ainit)); 
         if (opcode == 4) assert(yval == (ainit ^ binit) && c == (^ainit)); 
-        if (opcode == 5) assert(yval == binit && c == (ainit == binit)); 
+        if (opcode == 5) assert(yval == (ainit ~^ binit) && c == (ainit == binit)); 
         if (opcode == 6) assert(yval == ainit && c == (ainit > binit)); 
-        if (opcode == 7) assert(yval == (ainit << 1)); 
+        if (opcode == 7) assert(yval == binit); 
       end
       aval <= aval >> 1;
       bval <= bval >> 1;

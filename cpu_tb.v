@@ -65,11 +65,11 @@ module testbench (input clk, rst, [15:0]data_in,
     @(posedge clk) $rose(rst) |-> DUT.state == 0);
 
   assert property ( // FETCH
-    @(posedge clk) rst && DUT.state == 0 && DUT.counter == 0 |=>
-    DUT.state == 1 &&
+    @(posedge clk) rst && DUT.state == 0 && DUT.counter == 0 |->
     address == DUT.pc &&
     wren_n == 1 &&
-    oen_n == 0
+    oen_n == 0 ##1
+    DUT.state == 1
   );
 
   assert property ( // EXECUTE ld lit, B

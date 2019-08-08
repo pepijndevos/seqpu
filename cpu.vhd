@@ -41,6 +41,9 @@ begin
     y => pcinc
   );
 
+  address <= std_logic_vector(pc) when state = FETCH else b;
+  data_out <= a;
+
   -- "00" & lit         ld lit, B
   -- "010"              ld A, [B]
   -- "011"              ld [B], B
@@ -60,8 +63,6 @@ begin
       op <= x"0000";
       a <= x"0000";
       b <= x"0000";
-      data_out <= x"0000";
-      address <= x"0000";
       counter <= x"3";
       alu_rst_n <= '0';
       wren_n <= '1';
@@ -75,7 +76,6 @@ begin
           alu_rst_n <= '0';
           wren_n <= '1';
           oen_n <= '0';
-          address <= std_logic_vector(pc);
           op <= data_in;
           if counter = 0 then
             state <= EXECUTE;
@@ -90,8 +90,6 @@ begin
               alu_rst_n <= '1';
               state <= ALU_OP;
             else -- indirect load
-              address <= b;
-              data_out <= a;
               if op(13) = '0' then -- ld a, [b]
                 wren_n <= '0';
                 oen_n <= '1';
@@ -117,7 +115,7 @@ begin
             state <= ALU_OP;
           end if;
         when LOAD =>
-          a <= data_in;
+          b <= data_in;
           wren_n <= '1';
           oen_n <= '0';
           counter <= x"f";

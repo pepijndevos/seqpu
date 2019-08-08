@@ -31,8 +31,6 @@ end component;
 
 begin
 
-  led <= data_out(15 downto 8);
-
   dut: entity work.cpu port map (
     clk => clk,
     rst_n => rst_n,
@@ -51,6 +49,13 @@ begin
     data_in => data_out,
     data_out => data_in
   );
+
+  process(clk)
+  begin
+    if rising_edge(clk) and wren_n = '0' then
+      led <= data_out(15 downto 8);
+    end if;
+  end process;
 
 
 end;

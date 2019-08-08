@@ -9,7 +9,8 @@ entity cpu is
     address : out std_logic_vector(15 downto 0);
     data_in : in std_logic_vector(15 downto 0);
     data_out : out std_logic_vector(15 downto 0);
-    wren_n : out std_logic
+    wren_n : out std_logic;
+    oen_n : out std_logic
   );
 end cpu;
 
@@ -42,7 +43,7 @@ begin
 
   -- "00" & lit         ld lit, b
   -- "010"              ld a, [b]
-  -- "011"              ld [b], a
+  -- "011"              ld [a], a
   -- "1000" & op        op A, B, A
   -- "1001" & op        op A, B, B
   -- "1010" & op        op A, B, PC
@@ -61,9 +62,10 @@ begin
       b <= x"0000";
       data_out <= x"0000";
       address <= x"0000";
-      counter <= x"0";
+      counter <= x"3";
       alu_rst_n <= '0';
       wren_n <= '1';
+      oen_n <= '1';
       carry <= '0';
       state <= FETCH;
     elsif (rising_edge(clk)) then
@@ -72,36 +74,43 @@ begin
         when FETCH =>
           alu_rst_n <= '0';
           wren_n <= '1';
+          oen_n <= '0';
           address <= std_logic_vector(pc);
-          state <= EXECUTE;
-        when EXECUTE =>
           op <= data_in;
-          if data_in(15) = '0' then -- load
-            if data_in(14) = '0' then -- literal load
-              b <= "00" & data_in(13 downto 0);
+          if counter = 0 then
+            state <= EXECUTE;
+          end if;
+        when EXECUTE =>
+          if op(15) = '0' then -- load
+            if op(14) = '0' then -- literal load
+              b <= "00" & op(13 downto 0);
               wren_n <= '1';
+              oen_n <= '1';
               counter <= x"f";
               alu_rst_n <= '1';
               state <= ALU_OP;
             else -- indirect load
-              address <= b;
-              data_out <= a;
-              if data_in(13) = '0' then -- ld a, [b]
+              address <= a;
+              data_out <= b;
+              if op(13) = '0' then -- ld b, [a]
                 wren_n <= '0';
+                oen_n <= '1';
                 counter <= x"f";
                 alu_rst_n <= '1';
                 state <= ALU_OP;
-              else -- ld [b], a
-                address <= b;
+              else -- ld [a], a
                 wren_n <= '1';
+                oen_n <= '0';
+                counter <= x"3";
                 state <= LOAD;
               end if;
             end if;
           else -- alu
             wren_n <= '1';
-            if data_in(14) = '1' then -- literal
-              b <= (others => data_in(7)); -- sign extend
-              b(7 downto 0) <= data_in(7 downto 0);
+            oen_n <= '1';
+            if op(14) = '1' then -- literal
+              b <= (others => op(7)); -- sign extend
+              b(7 downto 0) <= op(7 downto 0);
             end if;
             counter <= x"f";
             alu_rst_n <= '1';
@@ -110,11 +119,15 @@ begin
         when LOAD =>
           a <= data_in;
           wren_n <= '1';
+          oen_n <= '0';
           counter <= x"f";
           alu_rst_n <= '1';
-          state <= ALU_OP;
+          if counter = 0 then
+            state <= ALU_OP;
+          end if;
         when ALU_OP =>
           wren_n <= '1';
+          oen_n <= '1';
           if op(15) = '0' then -- load
             a0 := a(0);
             b0 := b(0);
@@ -150,6 +163,7 @@ begin
           if counter = 0 then
             carry <= c;
             state <= FETCH;
+            counter <= x"3";
             alu_rst_n <= '0';
           end if;
       end case;

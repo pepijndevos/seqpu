@@ -39,14 +39,14 @@ module testbench (
       bval <= binit;
     end else begin
       if (counter == 8) begin
-        if (opcode == 0) assert(yval == (ainit + binit) && c == (ainit + binit > 255)); 
-        if (opcode == 1) assert(yval == (ainit - binit)); 
-        if (opcode == 2) assert(yval == (ainit | binit) && c == (|ainit)); 
-        if (opcode == 3) assert(yval == (ainit & binit) && c == (&ainit)); 
-        if (opcode == 4) assert(yval == (ainit ^ binit) && c == (^ainit)); 
-        if (opcode == 5) assert(yval == (ainit ~^ binit) && c == (ainit == binit)); 
-        if (opcode == 6) assert(yval == ainit && c == (ainit > binit)); 
-        if (opcode == 7) assert(yval == binit); 
+        if (opcode == 0) assert(yval == (ainit + binit) && c == (ainit + binit > 255));
+        if (opcode == 1) assert(yval == (ainit - binit));
+        if (opcode == 2) assert(yval == (ainit | binit) && c == (|ainit));
+        if (opcode == 3) assert(yval == (ainit & binit) && c == (&ainit));
+        if (opcode == 4) assert(yval == (ainit ^ binit) && c == (^ainit));
+        if (opcode == 5) assert(yval == binit && c == (ainit == binit));
+        if (opcode == 6) assert(yval == ainit && c == (ainit > binit));
+        if (opcode == 7) assert(yval == 0 && c == 0);
       end
       aval <= aval >> 1;
       bval <= bval >> 1;

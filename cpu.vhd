@@ -41,9 +41,9 @@ begin
     y => pcinc
   );
 
-  -- "00" & lit         ld lit, b
-  -- "010"              ld a, [b]
-  -- "011"              ld [a], a
+  -- "00" & lit         ld lit, B
+  -- "010"              ld A, [B]
+  -- "011"              ld [B], B
   -- "1000" & op        op A, B, A
   -- "1001" & op        op A, B, B
   -- "1010" & op        op A, B, PC
@@ -90,15 +90,15 @@ begin
               alu_rst_n <= '1';
               state <= ALU_OP;
             else -- indirect load
-              address <= a;
-              data_out <= b;
-              if op(13) = '0' then -- ld b, [a]
+              address <= b;
+              data_out <= a;
+              if op(13) = '0' then -- ld a, [b]
                 wren_n <= '0';
                 oen_n <= '1';
                 counter <= x"f";
                 alu_rst_n <= '1';
                 state <= ALU_OP;
-              else -- ld [a], a
+              else -- ld [b], b
                 wren_n <= '1';
                 oen_n <= '0';
                 counter <= x"3";

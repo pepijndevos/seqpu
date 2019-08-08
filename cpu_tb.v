@@ -75,23 +75,23 @@ module testbench (input clk, rst, [15:0]data_in,
   assert property ( // EXECUTE ld lit, B
     @(posedge clk) DUT.state == 1 && DUT.op[15:14] == 2'b00 |=>
     DUT.state == 3 && // ALU
-    DUT.b == DUT.op[13:0] && // read address
+    DUT.B == DUT.op[13:0] && // read address
     wren_n == 1
   );
 
   assert property ( // EXECUTE ld A, [B]
     @(posedge clk) DUT.state == 1 && DUT.op[15:13] == 3'b010 |=>
     DUT.state == 3 && // ALU
-    address == DUT.a && // write address
-    data_out == DUT.b &&
+    address == DUT.b && // write address
+    data_out == DUT.a &&
     wren_n == 0 &&
     oen_n == 1
   );
 
-  assert property ( // EXECUTE ld [A], A
+  assert property ( // EXECUTE ld [B], B
     @(posedge clk) DUT.state == 1 && DUT.op[15:13] == 3'b011 |=>
     DUT.state == 2 && // LOAD
-    address == DUT.a && // read address
+    address == DUT.b && // read address
     wren_n == 1 &&
     oen_n == 0
   );
@@ -114,7 +114,7 @@ module testbench (input clk, rst, [15:0]data_in,
   assert property ( // LOAD
     @(posedge clk) DUT.state == 2 && DUT.counter == 0 |=>
     DUT.state == 3 && // ALU
-    DUT.a == $past(data_in) &&
+    DUT.b == $past(data_in) &&
     wren_n == 1 &&
     oen_n == 0
   );

@@ -18,12 +18,9 @@ architecture rtl of alu is
   signal ci, cip : std_logic; -- carry in
   signal co : std_logic; -- carry out
   signal cr : std_logic; -- reset value
-  signal first : std_logic; -- ignore co on first clock
 begin
   
   c <= ci;
-
-  ci <= cr when first = '1' else cip;
 
   process(opcode, a, b, ci)
   begin
@@ -71,10 +68,9 @@ begin
   begin
     if(rising_edge(clk)) then
       if(rst_n = '0') then
-        first <= '1';
+        ci <= cr;
       else
-        first <= '0';
-        cip <= co;
+        ci <= co;
       end if;
     end if;
   end process;

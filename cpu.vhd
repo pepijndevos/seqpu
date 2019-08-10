@@ -41,6 +41,7 @@ begin
     y => pcinc
   );
 
+  alu_rst_n <= '1' when state = ALU_OP else '0';
   address <= std_logic_vector(pc) when state = FETCH else b;
   data_out <= a;
 
@@ -64,7 +65,6 @@ begin
       a <= x"0000";
       b <= x"0000";
       counter <= x"3";
-      alu_rst_n <= '0';
       wren_n <= '1';
       oen_n <= '1';
       carry <= '0';
@@ -73,7 +73,6 @@ begin
       counter <= counter - 1;
       case state is
         when FETCH =>
-          alu_rst_n <= '0';
           wren_n <= '1';
           oen_n <= '0';
           op <= data_in;
@@ -87,14 +86,12 @@ begin
               wren_n <= '1';
               oen_n <= '1';
               counter <= x"f";
-              alu_rst_n <= '1';
               state <= ALU_OP;
             else -- indirect load
               if op(13) = '0' then -- ld a, [b]
                 wren_n <= '0';
                 oen_n <= '1';
                 counter <= x"f";
-                alu_rst_n <= '1';
                 state <= ALU_OP;
               else -- ld [b], b
                 wren_n <= '1';
@@ -111,7 +108,6 @@ begin
               b(7 downto 0) <= op(7 downto 0);
             end if;
             counter <= x"f";
-            alu_rst_n <= '1';
             state <= ALU_OP;
           end if;
         when LOAD =>
@@ -119,7 +115,6 @@ begin
           wren_n <= '1';
           oen_n <= '0';
           counter <= x"f";
-          alu_rst_n <= '1';
           if counter = 0 then
             state <= ALU_OP;
           end if;
@@ -162,7 +157,6 @@ begin
             carry <= c;
             state <= FETCH;
             counter <= x"3";
-            alu_rst_n <= '0';
           end if;
       end case;
     end if;

@@ -22,6 +22,7 @@ architecture rtl of cpu is
   signal pc : unsigned(15 downto 0);
   signal c, y, pcinc, carry: std_logic;
   signal alu_rst_n : std_logic;
+  signal a0, b0, pc0 : std_logic;
 begin
 
   alu1: entity work.alu port map (
@@ -44,6 +45,24 @@ begin
   alu_rst_n <= '1' when state = ALU_OP else '0';
   address <= std_logic_vector(pc) when state = FETCH else b;
   data_out <= a;
+  oen_n <= '0' when state = FETCH or state = LOAD else '1';
+  wren_n <= '0' when state = EXECUTE and op(15 downto 13)  = "010" else '1';
+
+  -- op(15) => ALU
+  -- "00" => A = A op B
+  -- "01" => B = A op B
+  -- "10" => PC = A op B
+  -- "11" => PC = A op B when carry else PC
+  a0 <= y when op(15) = '1'
+           and op(13 downto 12) = "00"
+          else a(0);
+  b0 <= y when op(15) = '1'
+           and op(13 downto 12) = "01"
+          else b(0);
+  pc0 <= y when op(15) = '1'
+            and (op(13 downto 12) = "10"
+             or (op(13 downto 12) = "11" and carry = '1'))
+           else pcinc;
 
   -- "00" & lit         ld lit, B
   -- "010"              ld A, [B]
@@ -57,7 +76,6 @@ begin
   -- "1110" & op & lit  op A, lit, PC
   -- "1111" & op & lit  op A, lit, PC (if carry)
   process(clk, rst_n)
-    variable a0, b0, pc0 : std_logic;
   begin
     if (rst_n = '0') then
       pc <= x"0000";
@@ -65,16 +83,12 @@ begin
       a <= x"0000";
       b <= x"0000";
       counter <= x"3";
-      wren_n <= '1';
-      oen_n <= '1';
       carry <= '0';
       state <= FETCH;
     elsif (rising_edge(clk)) then
       counter <= counter - 1;
       case state is
         when FETCH =>
-          wren_n <= '1';
-          oen_n <= '0';
           op <= data_in;
           if counter = 0 then
             state <= EXECUTE;
@@ -83,26 +97,18 @@ begin
           if op(15) = '0' then -- load
             if op(14) = '0' then -- literal load
               b <= "00" & op(13 downto 0);
-              wren_n <= '1';
-              oen_n <= '1';
               counter <= x"f";
               state <= ALU_OP;
             else -- indirect load
               if op(13) = '0' then -- ld a, [b]
-                wren_n <= '0';
-                oen_n <= '1';
                 counter <= x"f";
                 state <= ALU_OP;
               else -- ld [b], b
-                wren_n <= '1';
-                oen_n <= '0';
                 counter <= x"3";
                 state <= LOAD;
               end if;
             end if;
           else -- alu
-            wren_n <= '1';
-            oen_n <= '1';
             if op(14) = '1' then -- literal
               b <= (others => op(7)); -- sign extend
               b(7 downto 0) <= op(7 downto 0);
@@ -112,44 +118,11 @@ begin
           end if;
         when LOAD =>
           b <= data_in;
-          wren_n <= '1';
-          oen_n <= '0';
           counter <= x"f";
           if counter = 0 then
             state <= ALU_OP;
           end if;
         when ALU_OP =>
-          wren_n <= '1';
-          oen_n <= '1';
-          if op(15) = '0' then -- load
-            a0 := a(0);
-            b0 := b(0);
-            pc0 := pcinc;
-          else
-            case op(13 downto 12) is
-              when "00" => -- op A, B, A
-                a0 := y;
-                b0 := b(0);
-                pc0 := pcinc;
-              when "01" => -- op A, B, B
-                a0 := a(0);
-                b0 := y;
-                pc0 := pcinc;
-              when "10" => -- op A, B, PC
-                a0 := a(0);
-                b0 := b(0);
-                pc0 := y;
-              when "11" => -- op A, B, PC (if carry)
-                a0 := a(0);
-                b0 := b(0);
-                if carry = '1' then
-                  pc0 := y;
-                else
-                  pc0 := pcinc;
-                end if;
-              when others =>
-            end case;
-          end if;
           a <= a0 & a(15 downto 1);
           b <= b0 & b(15 downto 1);
           pc <= pc0 & pc(15 downto 1);

@@ -80,12 +80,12 @@ module testbench (input clk, rst, [15:0]data_in,
   );
 
   assert property ( // EXECUTE ld A, [B]
-    @(posedge clk) DUT.state == 1 && DUT.op[15:13] == 3'b010 |=>
-    DUT.state == 3 && // ALU
+    @(posedge clk) DUT.state == 1 && DUT.op[15:13] == 3'b010 |->
     address == DUT.b && // write address
     data_out == DUT.a &&
     wren_n == 0 &&
-    oen_n == 1
+    oen_n == 1 ##1
+    DUT.state == 3// ALU
   );
 
   assert property ( // EXECUTE ld [B], B
@@ -112,21 +112,21 @@ module testbench (input clk, rst, [15:0]data_in,
   );
 
   assert property ( // LOAD
-    @(posedge clk) DUT.state == 2 && DUT.counter == 0 |=>
-    DUT.state == 3 && // ALU
-    DUT.b == $past(data_in) &&
+    @(posedge clk) DUT.state == 2 && DUT.counter == 0 |->
     wren_n == 1 &&
-    oen_n == 0
+    oen_n == 0 ##1
+    DUT.state == 3 && // ALU
+    DUT.b == $past(data_in)
   );
 
   assert property ( // ALU
-    @(posedge clk) DUT.state == 3 && DUT.counter == 0 |=>
+    @(posedge clk) DUT.state == 3 && DUT.counter == 0 |->
+    wren_n == 1 &&
+    oen_n == 1 ##1
     DUT.state == 0 &&
     (DUT.pc == lastpc+16'd1 || DUT.pc == alu(alu_op, lasta, lastb)) &&
     (DUT.a == lasta || DUT.a == alu(alu_op, lasta, lastb)) &&
-    (DUT.b == lastb || DUT.b == alu(alu_op, lasta, lastb)) &&
-    wren_n == 1 &&
-    oen_n == 1
+    (DUT.b == lastb || DUT.b == alu(alu_op, lasta, lastb))
   );
 
   always @(*) assert (wren_n || oen_n);

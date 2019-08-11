@@ -124,10 +124,16 @@ module testbench (input clk, rst, [15:0]data_in,
     wren_n == 1 &&
     oen_n == 1 ##1
     DUT.state == 0 &&
-    (DUT.pc == lastpc+16'd1 || DUT.pc == alu(alu_op, lasta, lastb)) &&
-    (DUT.a == lasta || DUT.a == alu(alu_op, lasta, lastb)) &&
-    (DUT.b == lastb || DUT.b == alu(alu_op, lasta, lastb))
+    (DUT.pc == lastpc+16'd1 || DUT.pc == alu_res) &&
+    (DUT.a == lasta || DUT.a == alu_res) &&
+    (DUT.b == lastb || DUT.b == alu_res)
   );
+
+  assume property ( // ALU
+    @(posedge clk) DUT.state == 3 && DUT.counter == 0 && DUT.op[14] == 1'b0 |->
+    DUT.op[3:0] == 0
+  );
+  // TODO test barrel shift, big pita
 
   always @(*) assert (wren_n || oen_n);
 

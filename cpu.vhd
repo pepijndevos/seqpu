@@ -67,10 +67,10 @@ begin
   -- "00" & lit         ld lit, B
   -- "010"              ld A, [B]
   -- "011"              ld [B], B
-  -- "1000" & op        op A, B, A
-  -- "1001" & op        op A, B, B
-  -- "1010" & op        op A, B, PC
-  -- "1011" & op        op A, B, PC (if carry)
+  -- "1000" & op & rot  op A, B, A
+  -- "1001" & op & rot  op A, B, B
+  -- "1010" & op & rot  op A, B, PC
+  -- "1011" & op & rot  op A, B, PC (if carry)
   -- "1100" & op & lit  op A, lit, A
   -- "1101" & op & lit  op A, lit, B
   -- "1110" & op & lit  op A, lit, PC
@@ -112,8 +112,10 @@ begin
             if op(14) = '1' then -- literal
               b <= (others => op(7)); -- sign extend
               b(7 downto 0) <= op(7 downto 0);
+              counter <= x"f";
+            else
+              counter <= unsigned(not op(3 downto 0)); -- barrel shift
             end if;
-            counter <= x"f";
             state <= ALU_OP;
           end if;
         when LOAD =>

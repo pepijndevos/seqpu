@@ -28,9 +28,15 @@ begin
   process(address)
   begin
     case address is
-      when x"0000" => data_in <= "1100101000000000"; -- B A 0 A  ;
-      when x"0001" => data_in <= "1100000000000001"; -- add A 1 A;
-      when x"0002" => data_in <= "0000000000000010"; -- ld B 0010;
+      --when x"0000" => data_in <= "1100101000000000"; -- B A 0 A  ;
+      --when x"0001" => data_in <= "1100000000000001"; -- add A 1 A;
+      --when x"0002" => data_in <= "0000000000000010"; -- ld B 0010;
+      --when x"0003" => data_in <= "0100000000000000"; -- ld A [B] ;
+      --when x"0004" => data_in <= "0000000000000001"; -- ld B 0001;
+      --when x"0005" => data_in <= "1010101000000000"; -- jp B     ;
+      when x"0000" => data_in <= "1100101000000001"; -- B A 1 A  ;
+      when x"0001" => data_in <= "1000110000000001"; -- roll A 1 A;
+      when x"0002" => data_in <= "0000000000010000"; -- ld B 0010;
       when x"0003" => data_in <= "0100000000000000"; -- ld A [B] ;
       when x"0004" => data_in <= "0000000000000001"; -- ld B 0001;
       when x"0005" => data_in <= "1010101000000000"; -- jp B     ;

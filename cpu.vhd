@@ -119,8 +119,8 @@ begin
           end if;
         when LOAD =>
           b <= data_in;
-          counter <= x"f";
           if counter = 0 then
+            counter <= x"f";
             state <= ALU_OP;
           end if;
         when ALU_OP =>

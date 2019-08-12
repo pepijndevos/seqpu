@@ -27,6 +27,29 @@ module testbench (input clk, rst, [15:0]data_in,
     end
   endfunction
 
+  function [15:0] rotate([3:0] rot, [15:0] in, [15:0] res);
+    begin
+      case (rot) // a piece of me died writing this
+        4'b0000: rotate = res;
+        4'b0001: rotate = {res[14:0], in[15:15]};
+        4'b0010: rotate = {res[13:0], in[15:14]};
+        4'b0011: rotate = {res[12:0], in[15:13]};
+        4'b0100: rotate = {res[11:0], in[15:12]};
+        4'b0101: rotate = {res[10:0], in[15:11]};
+        4'b0110: rotate = {res[9:0], in[15:10]};
+        4'b0111: rotate = {res[8:0], in[15:9]};
+        4'b1000: rotate = {res[7:0], in[15:8]};
+        4'b1001: rotate = {res[6:0], in[15:7]};
+        4'b1010: rotate = {res[5:0], in[15:6]};
+        4'b1011: rotate = {res[4:0], in[15:5]};
+        4'b1100: rotate = {res[3:0], in[15:4]};
+        4'b1101: rotate = {res[2:0], in[15:3]};
+        4'b1110: rotate = {res[1:0], in[15:2]};
+        4'b1111: rotate = {res[0:0], in[15:1]};
+      endcase
+    end
+  endfunction
+
   reg initial_reset = 1'b0;
   (* keep *) reg [2:0] mystate;
   always @(*) mystate = DUT.state;
@@ -120,20 +143,17 @@ module testbench (input clk, rst, [15:0]data_in,
   );
 
   assert property ( // ALU
-    @(posedge clk) DUT.state == 3 && DUT.counter == 0 |->
+    @(posedge clk) DUT.state == 3 && DUT.counter == 0 && DUT.op[15:12] != 4'b1000 |->
     wren_n == 1 &&
     oen_n == 1 ##1
-    DUT.state == 0 &&
-    (DUT.pc == lastpc+16'd1 || DUT.pc == alu_res) &&
-    (DUT.a == lasta || DUT.a == alu_res) &&
-    (DUT.b == lastb || DUT.b == alu_res)
+    DUT.state == 0 && (
+    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.b == lastb) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.b == alu_res) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == alu_res && DUT.b == lastb) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == rotate(DUT.op[3:0], lasta, alu_res) && DUT.b == lastb) ||
+    (DUT.pc == alu_res && DUT.a == lasta && DUT.b == lastb)
+    )
   );
-
-  assume property ( // ALU
-    @(posedge clk) DUT.state == 3 && DUT.counter == 0 && DUT.op[14] == 1'b0 |->
-    DUT.op[3:0] == 0
-  );
-  // TODO test barrel shift, big pita
 
   always @(*) assert (wren_n || oen_n);
 

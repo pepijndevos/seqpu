@@ -1,15 +1,13 @@
 [options]
 mode bmc
-depth 12
+depth 20
 
 [engines]
-smtbmc boolector
+smtbmc z3
 
 [script]
-verific -vhdl alu.vhd
-read -formal alu_tb.v
-prep -top testbench
+ghdl -fpsl --std=08 -gformal=true alu.vhd -e alu
+prep -top alu
 
 [files]
 alu.vhd
-alu_tb.v

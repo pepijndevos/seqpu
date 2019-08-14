@@ -3,6 +3,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity alu is
+  generic (
+    formal : boolean := false
+  );
   port (
     clk : in std_logic;
     rst_n : in std_logic;
@@ -74,4 +77,48 @@ begin
       end if;
     end if;
   end process;
+
+  formal_gen : if formal generate
+    signal last_op : std_logic_vector(2 downto 0);
+    signal a_sr : unsigned(7 downto 0);
+    signal b_sr : unsigned(7 downto 0);
+    signal y_sr : unsigned(7 downto 0);
+  begin
+    process(clk)
+    begin
+      if rising_edge(clk) then
+        last_op <= opcode;
+        a_sr <= a & a_sr(7 downto 1);
+        b_sr <= b & b_sr(7 downto 1);
+        y_sr <= y & y_sr(7 downto 1);
+      end if;
+    end process;
+
+    -- set all declarations to run on clk
+    default clock is rising_edge(clk);
+    -- restrict reset to be a repeating sequence of 011111111011111111...
+    restrict {{rst_n = '0'; (rst_n = '1')[*8]}[+]};
+    -- assume that the opcode does not change while not in reset
+    assume always {rst_n = '0'; rst_n = '1'} |=>
+      opcode = last_op until rst_n = '0';
+    -- assert that after 8 cycles each ALU op produces the correct output
+    assert always {opcode = "000" and rst_n = '1'; rst_n = '0'} |->
+      y_sr = a_sr+b_sr;
+    assert always {opcode = "001" and rst_n = '1'; rst_n = '0'} |->
+      y_sr = a_sr-b_sr;
+    assert always {opcode = "010" and rst_n = '1'; rst_n = '0'} |->
+      y_sr = (a_sr or b_sr);
+    assert always {opcode = "011" and rst_n = '1'; rst_n = '0'} |->
+      std_logic_vector(y_sr) = (std_logic_vector(a_sr) and std_logic_vector(b_sr));
+    assert always {opcode = "100" and rst_n = '1'; rst_n = '0'} |->
+      std_logic_vector(y_sr) = (std_logic_vector(a_sr) xor std_logic_vector(b_sr));
+    assert always {opcode = "101" and rst_n = '1'; rst_n = '0'} |->
+      std_logic_vector(y_sr) = std_logic_vector(b_sr) and
+      (ci = '1') = (a_sr = b_sr);
+    assert always {opcode = "110" and rst_n = '1'; rst_n = '0'} |->
+      std_logic_vector(y_sr) = std_logic_vector(a_sr) and
+      (ci = '1') = (a_sr > b_sr);
+    assert always {opcode = "111" and rst_n = '1'; rst_n = '0'} |->
+      y_sr = 0 and ci = '0';
+  end generate;
 end rtl;

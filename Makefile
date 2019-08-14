@@ -3,7 +3,7 @@ SOURCES=alu.vhd inc.vhd cpu.vhd
 ifdef SYMBIOTIC_LICENSE
 		YOSYSARGS=-p "verific -vhdl ${SOURCES}; verific -import $*"
 else
-		YOSYSARGS=-m ghdl -p "ghdl ${SOURCES} -e $*"
+		YOSYSARGS=-m ghdl -p "ghdl --std=08 ${SOURCES} -e $*"
 endif
 
 %_rtl.il: %.vhd ${SOURCES}

@@ -110,8 +110,8 @@ begin
             end if;
           else -- alu
             if op(14) = '1' then -- literal
-              b <= (others => op(7)); -- sign extend
-              b(7 downto 0) <= op(7 downto 0);
+              b <= (others => op(8)); -- sign extend
+              b(8 downto 0) <= op(8 downto 0);
               counter <= x"f";
             end if;
             counter <= x"f";
@@ -131,7 +131,9 @@ begin
           b <= b0 & b(15 downto 1);
           pc <= pc0 & pc(15 downto 1);
           if counter = 0 then
-            carry <= c;
+            if op(15) = '1' then
+              carry <= c;
+            end if;
             state <= FETCH;
             counter <= x"3";
           end if;

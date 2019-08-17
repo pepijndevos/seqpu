@@ -122,7 +122,7 @@ module testbench (input clk, rst, [15:0]data_in,
   assert property ( // EXECUTE op A lit R
     @(posedge clk) DUT.state == 1 && DUT.op[15:14] == 2'b11 |=>
     DUT.state == 3 && // ALU
-    DUT.b == {{8{DUT.op[7]}}, DUT.op[7:0]} &&
+    DUT.b == {{8{DUT.op[8]}}, DUT.op[7:0]} &&
     wren_n == 1 &&
     oen_n == 1
   );

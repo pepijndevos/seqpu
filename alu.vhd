@@ -18,12 +18,12 @@ entity alu is
 end alu;
 
 architecture rtl of alu is
-  signal ci, cip : std_logic; -- carry in
+  signal ci : std_logic; -- carry in
   signal co : std_logic; -- carry out
   signal cr : std_logic; -- reset value
 begin
   
-  c <= ci;
+  c <= co;
 
   process(opcode, a, b, ci)
   begin
@@ -83,6 +83,7 @@ begin
     signal a_sr : unsigned(7 downto 0);
     signal b_sr : unsigned(7 downto 0);
     signal y_sr : unsigned(7 downto 0);
+    signal c_sr : std_logic;
   begin
     process(clk)
     begin
@@ -91,6 +92,7 @@ begin
         a_sr <= a & a_sr(7 downto 1);
         b_sr <= b & b_sr(7 downto 1);
         y_sr <= y & y_sr(7 downto 1);
+        c_sr <= c;
       end if;
     end process;
 
@@ -113,10 +115,10 @@ begin
     assert always {opcode = "100" and rst_n = '1'; rst_n = '0'} |->
       y_sr = (a_sr xor b_sr);
     assert always {opcode = "101" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = b_sr and (ci = '1') = (a_sr = b_sr);
+      y_sr = b_sr and (c_sr = '1') = (a_sr = b_sr);
     assert always {opcode = "110" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = a_sr and (ci = '1') = (a_sr > b_sr);
+      y_sr = a_sr and (c_sr = '1') = (a_sr > b_sr);
     assert always {opcode = "111" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = 0 and ci = '0';
+      y_sr = 0 and c_sr = '0';
   end generate;
 end rtl;

@@ -109,7 +109,7 @@ begin
     op_sub: assert always {opcode = "001" and rst_n = '1'; rst_n = '0'} |->
       y_sr = a_sr-b_sr;
     op_or: assert always {opcode = "010" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = (a_sr and b_sr);
+      y_sr = (a_sr or b_sr);
     op_and: assert always {opcode = "011" and rst_n = '1'; rst_n = '0'} |->
       y_sr = (a_sr and b_sr);
     op_xor: assert always {opcode = "100" and rst_n = '1'; rst_n = '0'} |->

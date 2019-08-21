@@ -104,21 +104,21 @@ begin
     assume always {rst_n = '0'; rst_n = '1'} |->
       opcode = last_op until rst_n = '0';
     -- assert that after 8 cycles each ALU op produces the correct output
-    assert always {opcode = "000" and rst_n = '1'; rst_n = '0'} |->
+    op_add: assert always {opcode = "000" and rst_n = '1'; rst_n = '0'} |->
       y_sr = a_sr+b_sr;
-    assert always {opcode = "001" and rst_n = '1'; rst_n = '0'} |->
+    op_sub: assert always {opcode = "001" and rst_n = '1'; rst_n = '0'} |->
       y_sr = a_sr-b_sr;
-    assert always {opcode = "010" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = (a_sr or b_sr);
-    assert always {opcode = "011" and rst_n = '1'; rst_n = '0'} |->
+    op_or: assert always {opcode = "010" and rst_n = '1'; rst_n = '0'} |->
       y_sr = (a_sr and b_sr);
-    assert always {opcode = "100" and rst_n = '1'; rst_n = '0'} |->
+    op_and: assert always {opcode = "011" and rst_n = '1'; rst_n = '0'} |->
+      y_sr = (a_sr and b_sr);
+    op_xor: assert always {opcode = "100" and rst_n = '1'; rst_n = '0'} |->
       y_sr = (a_sr xor b_sr);
-    assert always {opcode = "101" and rst_n = '1'; rst_n = '0'} |->
+    op_eq: assert always {opcode = "101" and rst_n = '1'; rst_n = '0'} |->
       y_sr = b_sr and (c_sr = '1') = (a_sr = b_sr);
-    assert always {opcode = "110" and rst_n = '1'; rst_n = '0'} |->
+    op_gt: assert always {opcode = "110" and rst_n = '1'; rst_n = '0'} |->
       y_sr = a_sr and (c_sr = '1') = (a_sr > b_sr);
-    assert always {opcode = "111" and rst_n = '1'; rst_n = '0'} |->
+    op_nul: assert always {opcode = "111" and rst_n = '1'; rst_n = '0'} |->
       y_sr = 0 and c_sr = '0';
   end generate;
 end rtl;

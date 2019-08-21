@@ -118,8 +118,8 @@ begin
             state <= ALU_OP;
           end if;
         when LOAD =>
-          b <= data_in;
           if counter = 0 then
+            b <= data_in;
             counter <= x"f";
             state <= ALU_OP;
           end if;

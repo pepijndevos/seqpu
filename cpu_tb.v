@@ -27,6 +27,21 @@ module testbench (input clk, rst, [15:0]data_in,
     end
   endfunction
 
+  function alu_carry([2:0] op, [15:0] a, [15:0] b);
+    begin
+      case (op)
+        3'b000: alu_carry = (({1'b0,a} + {1'b0,b})>17'hffff);
+        3'b001: alu_carry = (a>=b);
+        3'b010: alu_carry = (|a);
+        3'b011: alu_carry = (&a);
+        3'b100: alu_carry = (^a);
+        3'b101: alu_carry = (a==b);
+        3'b110: alu_carry = (a>b);
+        3'b111: alu_carry = 0;
+      endcase
+    end
+  endfunction
+
   function [15:0] rotate([3:0] rot, [15:0] in, [15:0] res);
     begin
       case (rot) // a piece of me died writing this
@@ -63,15 +78,20 @@ module testbench (input clk, rst, [15:0]data_in,
   always @(*) mypc = DUT.pc;
   (* keep *) reg [3:0] mycounter;
   always @(*) mycounter = DUT.counter;
+  (* keep *) reg mycarry;
+  always @(*) mycarry = DUT.carry;
 
   reg [15:0] lasta;
   reg [15:0] lastb;
   reg [15:0] lastpc;
+  reg lastcarry;
 
   (* keep *) reg [2:0] alu_op;
   always @(*) alu_op = DUT.op[11:9];
   (* keep *) reg [15:0] alu_res;
   always @(*) alu_res = alu(alu_op, lasta, lastb);
+  (* keep *) reg alu_resc;
+  always @(*) alu_resc = alu_carry(alu_op, lasta, lastb);
  
   always @(*) assume(rst == initial_reset);
 
@@ -81,6 +101,7 @@ module testbench (input clk, rst, [15:0]data_in,
       lasta <= DUT.a;
       lastb <= DUT.b;
       lastpc <= DUT.pc;
+      lastcarry <= DUT.carry;
     end
   end
 
@@ -143,13 +164,13 @@ module testbench (input clk, rst, [15:0]data_in,
   );
 
   assert property ( // ALU
-    @(posedge clk) DUT.state == 3 && DUT.counter == 0 && DUT.op[15:12] != 4'b1000 |->
+    @(posedge clk) DUT.state == 3 && DUT.counter == 0 |->
     wren_n == 1 &&
     oen_n == 1 ##1
     DUT.state == 0 && (
     (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.b == lastb) ||
-    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.b == alu_res) ||
-    (DUT.pc == lastpc+16'd1 && DUT.a == alu_res && DUT.b == lastb) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.b == alu_res && DUT.carry == alu_resc) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == alu_res && DUT.b == lastb && DUT.carry == alu_resc) ||
     (DUT.pc == lastpc+16'd1 && DUT.a == rotate(DUT.op[3:0], lasta, alu_res) && DUT.b == lastb) ||
     (DUT.pc == alu_res && DUT.a == lasta && DUT.b == lastb)
     )

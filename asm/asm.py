@@ -23,6 +23,15 @@ def parse_numbers(it):
     for cmd in it:
         yield [num(val) for val in cmd]
 
+
+def replace_defines(it):
+    defines = {}
+    for cmd in it:
+        if cmd[0].startswith('%'):
+            defines[cmd[1]] = cmd[2]
+        else:
+            yield [defines.get(w, w) for w in cmd]
+
 def join_labels(it):
     for cmd in it:
         if len(cmd) == 1 and cmd[0].endswith(':'):
@@ -78,6 +87,7 @@ def process(it):
     it = remove_nonsense(it)
     it = tokenize(it)
     it = parse_numbers(it)
+    it = replace_defines(it)
     it = join_labels(it)
     it = replace_labels(it)
     it = encode(it)

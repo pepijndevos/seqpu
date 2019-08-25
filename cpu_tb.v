@@ -175,6 +175,7 @@ module testbench (input clk, rst, [15:0]data_in,
     DUT.b == lastb && (
     (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.sp == lastsp) ||
     (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.sp == alu_res) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == alu_res && DUT.sp == alu_res) ||
     (DUT.pc == lastpc+16'd1 && DUT.a == alu_res && DUT.sp == lastsp && DUT.carry == alu_resc) ||
     (DUT.pc == lastpc+16'd1 && DUT.a == rotate(DUT.op[3:0], lasta, alu_res) && DUT.sp == lastsp) ||
     (DUT.pc == alu_res && DUT.a == lasta && DUT.sp == lastsp)

@@ -53,8 +53,10 @@ begin
   -- "01" => SP = A op B
   -- "10" => PC = A op B
   -- "11" => PC = A op B when carry else PC
-  a0 <= y when op(15) = '1'
-           and op(13 downto 12) = "00"
+  a0 <= y when (op(15) = '1' 
+           and op(13 downto 12) = "00") -- normal operation
+            or (op(15 downto 14) = "01"
+           and op(12) = '1') -- copy SP into A
           else a(0);
   sp0 <= y when (op(15) = '1'
             and op(13 downto 12) = "01") -- ALU
@@ -66,8 +68,10 @@ begin
            else pcinc;
 
   -- "00" & lit         ld lit, B
-  -- "010-" & op & lit  push A, [SP--]
-  -- "011-" & op & lit  pop [SP++], B
+  -- "0100" & op & lit  push A, [SP--]
+  -- "0101" & op & lit  push A, [SP--]; ld SP A
+  -- "0110" & op & lit  pop [SP++], B
+  -- "0111" & op & lit  pop [SP++], B; ld SP A
   -- "1000" & op & rol  op A, B, A
   -- "1001" & op &      op A, B, SP
   -- "1010" & op &      op A, B, PC

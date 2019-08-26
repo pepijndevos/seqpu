@@ -20,9 +20,9 @@ module testbench (input clk, rst, [15:0]data_in,
         3'b010: alu = a|b;
         3'b011: alu = a&b;
         3'b100: alu = a^b;
-        3'b101: alu = b;
+        3'b101: alu = a;
         3'b110: alu = a;
-        3'b111: alu = 0;
+        3'b111: alu = b;
       endcase
     end
   endfunction

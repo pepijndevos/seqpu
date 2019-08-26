@@ -4,6 +4,13 @@ lit stackbottom
 b sp
 
 start:
+b a 5
+loop:
+sub a 1
+gt a 0
+lit loop
+b pcc
+
 lit ret01
 b a
 push
@@ -16,8 +23,8 @@ a a
 a a
 a a
 
-lit start
-b pc
+lit end
+end: b pc
 
 loadSlide:
 a a

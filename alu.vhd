@@ -49,15 +49,15 @@ begin
         co <= a xor ci;
         cr <= '0';
       when "101" =>
-        y <= b; -- b
+        y <= a;
         co <= (a xnor b) and ci; -- a=b
         cr <= '1';
       when "110" =>
-        y <= a; -- a
+        y <= a;
         co <= (a and (not b)) or ((a xnor b) and ci); -- a > b
         cr <= '0';
-      when "111" => -- clear
-        y <= '0';
+      when "111" => -- clear carry (b)
+        y <= b;
         co <= '0';
         cr <= '1';
       when others =>
@@ -115,10 +115,10 @@ begin
     op_xor: assert always {opcode = "100" and rst_n = '1'; rst_n = '0'} |->
       y_sr = (a_sr xor b_sr);
     op_eq: assert always {opcode = "101" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = b_sr and (c_sr = '1') = (a_sr = b_sr);
+      y_sr = a_sr and (c_sr = '1') = (a_sr = b_sr);
     op_gt: assert always {opcode = "110" and rst_n = '1'; rst_n = '0'} |->
       y_sr = a_sr and (c_sr = '1') = (a_sr > b_sr);
     op_nul: assert always {opcode = "111" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = 0 and c_sr = '0';
+      y_sr = b_sr and c_sr = '0';
   end generate;
 end rtl;

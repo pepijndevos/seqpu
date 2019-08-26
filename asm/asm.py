@@ -58,7 +58,7 @@ def replace_labels(it):
 def encode(it):
     reg = {'a': 0, 'sp': 1, 'pc': 2, 'pcc': 3}
     alu = {'add': 0, 'sub': 1, 'or': 2, 'and': 3,
-           'xor': 4, 'b': 5, 'eq': 5, 'a': 6, 'gt': 6, 'clr': 7}
+           'xor': 4, 'eq': 5, 'a': 6, 'gt': 6, 'b': 7, 'clr': 7}
     for cmd in it:
         if len(cmd) == 0: continue
         op = cmd[0].lower()

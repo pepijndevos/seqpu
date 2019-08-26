@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 
 entity alu is
   generic (
-    formal : boolean := true
+    formal : boolean := false
   );
   port (
     clk : in std_logic;

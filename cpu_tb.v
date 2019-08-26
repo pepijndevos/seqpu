@@ -100,7 +100,7 @@ module testbench (input clk, rst, [15:0]data_in,
 
   always @(posedge clk) begin
     initial_reset <= 1'b1;
-    if (DUT.state == 3 && $past(DUT.state) != 3) begin
+    if (DUT.state == 2 && $past(DUT.state) != 2) begin
       lasta <= DUT.a;
       lastb <= DUT.b;
       lastsp <= DUT.sp;
@@ -122,7 +122,7 @@ module testbench (input clk, rst, [15:0]data_in,
 
   assert property ( // EXECUTE ld lit, B
     @(posedge clk) DUT.state == 1 && DUT.op[15:14] == 2'b00 |=>
-    DUT.state == 3 && // ALU
+    DUT.state == 2 && // ALU
     DUT.B == DUT.op[13:0] && // read address
     wren_n == 1
   );
@@ -133,20 +133,20 @@ module testbench (input clk, rst, [15:0]data_in,
     data_out == DUT.a &&
     wren_n == 0 &&
     oen_n == 1 ##1
-    DUT.state == 3// ALU
+    DUT.state == 2 // ALU
   );
 
   assert property ( // EXECUTE ld [SP], B
     @(posedge clk) DUT.state == 1 && DUT.op[15:13] == 3'b011 |=>
-    DUT.state == 2 && // LOAD
+    DUT.state == 2 && // ALU
     address == DUT.sp && // read address
     wren_n == 1 &&
-    oen_n == 0
+    oen_n == 1
   );
 
   assert property ( // EXECUTE op A lit R
     @(posedge clk) DUT.state == 1 && DUT.op[15:14] == 2'b11 |=>
-    DUT.state == 3 && // ALU
+    DUT.state == 2 && // ALU
     DUT.b == {{8{DUT.op[8]}}, DUT.op[7:0]} &&
     wren_n == 1 &&
     oen_n == 1
@@ -154,24 +154,24 @@ module testbench (input clk, rst, [15:0]data_in,
 
   assert property ( // EXECUTE op A B R
     @(posedge clk) DUT.state == 1 && DUT.op[15:14] == 2'b10 |=>
-    DUT.state == 3 && // ALU
+    DUT.state == 2 && // ALU
     wren_n == 1 &&
     oen_n == 1
   );
 
   assert property ( // LOAD
-    @(posedge clk) DUT.state == 2 && DUT.counter == 0 |->
+    @(posedge clk) DUT.state == 3 && DUT.counter == 0 |->
     wren_n == 1 &&
     oen_n == 0 ##1
-    DUT.state == 3 && // ALU
+    DUT.state == 0 && // ALU
     DUT.b == $past(data_in)
   );
 
   assert property ( // ALU
-    @(posedge clk) DUT.state == 3 && DUT.counter == 0 |->
+    @(posedge clk) DUT.state == 2 && DUT.counter == 0 |->
     wren_n == 1 &&
     oen_n == 1 ##1
-    DUT.state == 0 &&
+    (DUT.state == 0 || DUT.state == 3) &&
     DUT.b == lastb && (
     (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.sp == lastsp) ||
     (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.sp == alu_res) ||

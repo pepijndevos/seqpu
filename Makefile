@@ -6,6 +6,9 @@ else
 		YOSYSARGS=-m ghdl -p "ghdl --std=08 ${SOURCES} -e $*"
 endif
 
+%.mem: %.asm
+	python asm/asm.py $< > $@
+
 %_rtl.il: %.vhd ${SOURCES}
 	yosys -q ${YOSYSARGS} -p "script ../synth_74.ys; dump -o $@"
 
@@ -21,7 +24,9 @@ endif
 %.v: ../%.lib
 	yosys -q -p "read_liberty $<" -p "write_verilog $@"
 
-%.vvp: %.v %_tb.v 74series.v ../74_models.v
+bram.v: rom.mem
+
+%.vvp: %.v %_tb.v bram.v 74series.v ../74_models.v
 	iverilog -o $@ $^
 
 %.vcd: %.vvp

@@ -15,7 +15,7 @@ entity cpu is
 end cpu;
 
 architecture rtl of cpu is
-  type state_type is (FETCH, EXECUTE, LOAD, ALU_OP);
+  type state_type is (FETCH, EXECUTE, ALU_OP, LOAD);
   signal state : state_type;
   signal counter : unsigned(3 downto 0);
   signal op, a, b, pc, sp: std_logic_vector(15 downto 0);
@@ -105,30 +105,11 @@ begin
             b(8 downto 0) <= op(8 downto 0);
             counter <= x"f";
           end if;
-          if op(15) = '0' then -- load
-            if op(14) = '0' then -- literal load
-              b <= "00" & op(13 downto 0);
-              counter <= x"f";
-              state <= ALU_OP;
-            else -- indirect load
-              if op(13) = '0' then -- ld a, [b]
-                counter <= x"f";
-                state <= ALU_OP;
-              else -- ld [b], b
-                counter <= x"3";
-                state <= LOAD;
-              end if;
-            end if;
-          else -- alu
-            counter <= x"f";
-            state <= ALU_OP;
+          if op(15 downto 14) = "00" then -- literal load
+            b <= "00" & op(13 downto 0);
           end if;
-        when LOAD =>
-          if counter = 0 then
-            b <= data_in;
-            counter <= x"f";
-            state <= ALU_OP;
-          end if;
+          counter <= x"f";
+          state <= ALU_OP;
         when ALU_OP =>
           -- barrel shift
           if op(15 downto 12) /= "1000" or counter >= unsigned(op(3 downto 0)) then 
@@ -141,6 +122,16 @@ begin
             if op(15) = '1' then
               carry <= c;
             end if;
+            if op(15 downto 13) = "011" then
+              state <= LOAD;
+            else
+              state <= FETCH;
+            end if;
+            counter <= x"3";
+          end if;
+        when LOAD =>
+          if counter = 0 then
+            b <= data_in;
             state <= FETCH;
             counter <= x"3";
           end if;

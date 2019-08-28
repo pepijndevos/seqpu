@@ -37,7 +37,7 @@ begin
     $dumpvars;
 
     #4 rst_n = 1'b1;
-    #10000 $finish;
+    #50000 $finish;
     
 end
 

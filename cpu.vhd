@@ -18,10 +18,11 @@ architecture rtl of cpu is
   type state_type is (FETCH, EXECUTE, ALU_OP, LOAD);
   signal state : state_type;
   signal counter : unsigned(3 downto 0);
-  signal op, a, b, pc, sp: std_logic_vector(15 downto 0);
+  signal op, a, b, pc, sp, spp: std_logic_vector(15 downto 0);
   signal c, y, alu_a, pcinc, carry: std_logic;
   signal alu_rst_n : std_logic;
   signal a0, b0, pc0, sp0 : std_logic;
+  signal bspp0 : std_logic_vector(2 downto 0);
 begin
 
   alu1: entity work.alu port map (
@@ -46,38 +47,43 @@ begin
   address <= pc when state = FETCH else sp;
   data_out <= a;
   oen_n <= '0' when state = FETCH or state = LOAD else '1';
-  wren_n <= '0' when state = EXECUTE and op(15 downto 13)  = "010" else '1';
+  wren_n <= '0' when state = EXECUTE and op(15 downto 12)  = "0110" else '1';
+
+  -- exchange
+  with op(15 downto 12) select bspp0 <=
+    b(0) & spp(0) & sp(0) when "0100",
+    sp(0) & b(0) & spp(0) when "0101",
+    b(0) & sp(0) & spp(0) when others;
 
   -- op(15) => ALU
   -- "00" => A = A op B
-  -- "01" => SP = A op B
+  -- "01" => B = A op B
   -- "10" => PC = A op B
   -- "11" => PC = A op B when carry else PC
-  a0 <= y when (op(15) = '1' 
-           and op(13 downto 12) = "00") -- normal operation
-            or (op(15 downto 14) = "01"
-           and op(12) = '1') -- copy SP into A
+  a0 <= y when op(15) = '1'
+           and op(13 downto 12) = "00"
           else a(0);
-  sp0 <= y when (op(15) = '1'
-            and op(13 downto 12) = "01") -- ALU
-             or op(15 downto 14) = "01" -- push/pop
-           else sp(0);
+  b0 <= y when op(15) = '1'
+           and op(13 downto 12) = "01"
+          else bspp0(2);
+  sp0 <= y when op(15 downto 13) = "011" -- push/pop
+           else bspp0(1);
   pc0 <= y when op(15) = '1'
             and (op(13 downto 12) = "10"
              or (op(13 downto 12) = "11" and carry = '1'))
            else pcinc;
 
   -- "00" & lit         ld lit, B
-  -- "0100" & op & lit  push A, [SP--]
-  -- "0101" & op & lit  push A, [SP--]; ld SP A
-  -- "0110" & op & lit  pop [SP++], B
-  -- "0111" & op & lit  pop [SP++], B; ld SP A
+  -- "0100"             xch SP SP'
+  -- "0101"             xch SP B
+  -- "0110" & op & lit  push A, [SP]; op SP lit SP
+  -- "0111" & op & lit  op SP lit SP; pop [SP], B
   -- "1000" & op & rol  op A, B, A
-  -- "1001" & op &      op A, B, SP
+  -- "1001" & op &      op A, B, B
   -- "1010" & op &      op A, B, PC
   -- "1011" & op &      op A, B, PC (if carry)
   -- "1100" & op & lit  op A, lit, A
-  -- "1101" & op & lit  op A, lit, SP
+  -- "1101" & op & lit  op A, lit, B
   -- "1110" & op & lit  op A, lit, PC
   -- "1111" & op & lit  op A, lit, PC (if carry)
   process(clk, rst_n)
@@ -85,6 +91,7 @@ begin
     if (rst_n = '0') then
       pc <= x"0000";
       sp <= x"0000";
+      spp <= x"0000";
       op <= x"0000";
       a <= x"0000";
       b <= x"0000";
@@ -100,7 +107,7 @@ begin
             state <= EXECUTE;
           end if;
         when EXECUTE =>
-          if op(14) = '1' then -- literal
+          if op(15 downto 14) = "11" or op(15 downto 13) = "011" then -- literal
             b <= (others => op(8)); -- sign extend
             b(8 downto 0) <= op(8 downto 0);
             counter <= x"f";
@@ -115,14 +122,15 @@ begin
           if op(15 downto 12) /= "1000" or counter >= unsigned(op(3 downto 0)) then 
             a <= a0 & a(15 downto 1);
           end if;
-          b <= b(0) & b(15 downto 1);
+          b <= b0 & b(15 downto 1);
           pc <= pc0 & pc(15 downto 1);
           sp <= sp0 & sp(15 downto 1);
+          spp <= bspp0(0) & spp(15 downto 1);
           if counter = 0 then
             if op(15) = '1' then
               carry <= c;
             end if;
-            if op(15 downto 13) = "011" then
+            if op(15 downto 12) = "0111" then
               state <= LOAD;
             else
               state <= FETCH;
@@ -130,7 +138,7 @@ begin
             counter <= x"3";
           end if;
         when LOAD =>
-          if counter = 0 then
+          if counter = 0 then -- maybe only check 2 bits?
             b <= data_in;
             state <= FETCH;
             counter <= x"3";

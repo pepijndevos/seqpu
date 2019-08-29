@@ -2,7 +2,7 @@
 %define returnpointer 0x1000
 %define slide_src 0x1001
 %define slide_dest 0x1002
-%define slide_counter 0x1003
+%define slide_end 0x1003
 %define slide_index 0x1004
 %define vram 0x2000
 // sign-extended
@@ -10,24 +10,25 @@
 
 // fake button input
 b a 1
-b sp btnio
+b b btnio
+xch b
 st
 
 // set slide_index to 0
 b a 0
 lit slide_index
-b sp
+xch b
 st
 
 // load slide 0
 lit slides
 b a
 lit slide_src
-b sp
+xch b
 st // store slide address
 
 lit returnpointer
-b sp
+xch b
 lit button_loop
 b a
 st // return address
@@ -37,11 +38,12 @@ b pc
 // read buttons
 button_loop:
 lit returnpointer
-b sp
+xch b
 lit ret02
 b a
 st // return address
-b sp btnio
+b b btnio
+xch b
 ld
 b a
 eq a 0b01 // button 1
@@ -55,7 +57,7 @@ b pc // else loop
 ret02:
 
 lit returnpointer
-b sp
+xch b
 lit button_loop // return to loop
 b a
 st // return address
@@ -67,91 +69,98 @@ lit end
 end: b pc
 
 loadSlide:
+// set slide_dest
 lit vram
 b a
 lit slide_dest
-b sp
-st // set slide_dest
-lit slide_size
+xch b
+st
+// set slide_end
+lit slide_src
+xch b
+ld
 b a
-lit slide_counter
-b sp
-st // initiate counter
+lit slide_size
+add a
+lit slide_end
+xch b
+st
+
+lit slide_dest
+xch b
+ld // b=&dest
+xch b
+xch sp' // sp'=&dest
+lit slide_src
+xch b
+ld // b=&source
+b a 
+sub b 1 // pop pre-increments
+xch b // sp=&source, sp'=&dest
 
 copy_loop:
-lit slide_src
-b sp
-ld // b=*source
-b sp
-ld // b=word
+pop add 1
+xch sp'
 b a
-lit slide_dest
-b sp
-ld // b=*dest
-b sp
-pusha add 1 // copy word do dest, a=sp++
-lit slide_dest
-b sp
-st // slide_dest=&dest++
-lit slide_src
-b sp
-ld // b=*src
-b a
-add a 1
-lit slide_src
-st // slide_src=&src++
-lit slide_counter
-b sp
-ld // b=counter
-b a
-sub a 1
-st
-gt a 0 // if counter > 0
-lit copy_loop
-b pcc // jump to copy_loop
+push add 1
+xch sp' // a=word, sp=&source++, sp'=&dest++
 
+xch b
+b a // a=&source
+lit slide_end
+xch b // a=&source, sp=slide_end, sp'=&dest
+ld // a=&source, b=&end, sp'=&dest
+eq a
+lit copy_loop_end
+b pcc // break loop if &source=&end
+a b
+xch b // sp=&source, sp'=&dest
+lit copy_loop
+b pc // loop
+
+copy_loop_end:
 lit returnpointer
-b sp
+xch b
 ld
 b pc
 
 nextSlide:
 lit slide_index
-b sp
+xch b
 ld
 b a // a=slide_index
 lit slide_size
 add a // a=idx+size
 lit slide_index
-b sp
+xch b
 st // store slide_index
 lit slides
 add a // a=slides+idx+size
 lit slide_src
-b sp
+xch b
 st // store slide_src
 lit returnpointer
-b sp
+xch b
 ld
 b pc
 
 prevSlide:
 lit slide_index
-b sp
+xch b
 ld
 b a // a=slide_index
 lit slide_size
 sub a // a=idx-size
 lit slide_index
-b sp
+xch b
 st // store slide_index
 lit slides
 add a // a=slides+idx+size
 lit slide_src
-b sp
+xch b
 st // store slide_src
 lit returnpointer
-b sp
+xch b
 ld
 b pc
 

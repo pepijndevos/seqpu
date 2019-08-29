@@ -74,6 +74,8 @@ module testbench (input clk, rst, [15:0]data_in,
   always @(*) myb = DUT.b;
   (* keep *) reg [15:0] mysp;
   always @(*) mysp = DUT.sp;
+  (* keep *) reg [15:0] myspp;
+  always @(*) myspp = DUT.spp;
   (* keep *) reg [15:0] myop;
   always @(*) myop = DUT.op;
   (* keep *) reg [15:0] mypc;
@@ -86,6 +88,7 @@ module testbench (input clk, rst, [15:0]data_in,
   reg [15:0] lasta;
   reg [15:0] lastb;
   reg [15:0] lastsp;
+  reg [15:0] lastspp;
   reg [15:0] lastpc;
   reg lastcarry;
 
@@ -104,6 +107,7 @@ module testbench (input clk, rst, [15:0]data_in,
       lasta <= DUT.a;
       lastb <= DUT.b;
       lastsp <= DUT.sp;
+      lastspp <= DUT.spp;
       lastpc <= DUT.pc;
       lastcarry <= DUT.carry;
     end
@@ -127,8 +131,8 @@ module testbench (input clk, rst, [15:0]data_in,
     wren_n == 1
   );
 
-  assert property ( // EXECUTE ld A, [SP]
-    @(posedge clk) DUT.state == 1 && DUT.op[15:13] == 3'b010 |->
+  assert property ( // EXECUTE push A, [SP]
+    @(posedge clk) DUT.state == 1 && DUT.op[15:12] == 4'b0110 |->
     address == DUT.sp && // write address
     data_out == DUT.a &&
     wren_n == 0 &&
@@ -136,8 +140,8 @@ module testbench (input clk, rst, [15:0]data_in,
     DUT.state == 2 // ALU
   );
 
-  assert property ( // EXECUTE ld [SP], B
-    @(posedge clk) DUT.state == 1 && DUT.op[15:13] == 3'b011 |=>
+  assert property ( // EXECUTE pop [SP], B
+    @(posedge clk) DUT.state == 1 && DUT.op[15:12] == 4'b0111 |=>
     DUT.state == 2 && // ALU
     address == DUT.sp && // read address
     wren_n == 1 &&
@@ -159,6 +163,12 @@ module testbench (input clk, rst, [15:0]data_in,
     oen_n == 1
   );
 
+  assert property ( // EXECUTE xch
+    @(posedge clk) DUT.state == 1 && DUT.op[15:13] == 3'b010 |=>
+    DUT.state == 2 && // ALU
+    wren_n == 1 &&
+    oen_n == 1
+  );
   assert property ( // LOAD
     @(posedge clk) DUT.state == 3 && DUT.counter == 0 |->
     wren_n == 1 &&
@@ -171,13 +181,14 @@ module testbench (input clk, rst, [15:0]data_in,
     @(posedge clk) DUT.state == 2 && DUT.counter == 0 |->
     wren_n == 1 &&
     oen_n == 1 ##1
-    (DUT.state == 0 || DUT.state == 3) &&
-    DUT.b == lastb && (
-    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.sp == lastsp) ||
-    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.sp == alu_res) ||
-    (DUT.pc == lastpc+16'd1 && DUT.a == alu_res && DUT.sp == alu_res) ||
-    (DUT.pc == lastpc+16'd1 && DUT.a == alu_res && DUT.sp == lastsp && DUT.carry == alu_resc) ||
-    (DUT.pc == lastpc+16'd1 && DUT.a == rotate(DUT.op[3:0], lasta, alu_res) && DUT.sp == lastsp) ||
+    (DUT.state == 0 || DUT.state == 3) && (
+    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.b == lastb && DUT.sp == lastsp) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.b == lastb && DUT.sp == lastspp) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.b == lastsp && DUT.sp == lastb) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.b == lastb && DUT.sp == alu_res) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == alu_res && DUT.b == lastb && DUT.sp == lastsp && DUT.carry == alu_resc) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == lasta && DUT.b == alu_res && DUT.sp == lastsp && DUT.carry == alu_resc) ||
+    (DUT.pc == lastpc+16'd1 && DUT.a == rotate(DUT.op[3:0], lasta, alu_res) && DUT.b == lastb && DUT.sp == lastsp) ||
     (DUT.pc == alu_res && DUT.a == lasta && DUT.sp == lastsp)
     )
   );

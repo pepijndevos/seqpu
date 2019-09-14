@@ -2,7 +2,7 @@ module bram(input clk, wren_n, oen_n,
             input [15:0] address, data_in,
             output reg [15:0] data_out);
 
-parameter bits = 16;
+parameter bits = 14;
 
 reg [15:0] memory [0:(1<<bits)-1];
 // fuck Gowin FPGA Designer software
@@ -15,5 +15,6 @@ always @(posedge clk)
 always @(posedge clk)
   if (oen_n == 1'b0)
     data_out <= memory[address];
+
 
 endmodule

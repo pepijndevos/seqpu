@@ -26,7 +26,7 @@ endif
 
 bram.v: rom.mem
 
-%.vvp: %.v %_tb.v bram.v 74series.v ../74_models.v
+%.vvp: %.v %_tb.v bram.v 74ac.v ../74_models.v
 	iverilog -o $@ $^
 
 %.vcd: %.vvp

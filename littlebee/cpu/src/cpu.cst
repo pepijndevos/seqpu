@@ -3,10 +3,9 @@
 //File Title: Physical Constraints file
 //GOWIN Version: V1.9.1.01Beta
 //Part Number: GW1NR-LV9QN88C6/I5
-//Created Time: Tue Aug  6 12:42:47 2019
+//Created Time: Mon Sep  9 11:16:22 2019
 
 IO_LOC "clk" 35;
-IO_LOC "rst_n" 77;
 IO_LOC "led[0]" 79;
 IO_LOC "led[1]" 80;
 IO_LOC "led[2]" 81;
@@ -15,3 +14,4 @@ IO_LOC "led[4]" 83;
 IO_LOC "led[5]" 84;
 IO_LOC "led[6]" 85;
 IO_LOC "led[7]" 86;
+IO_LOC "rst_n" 77;

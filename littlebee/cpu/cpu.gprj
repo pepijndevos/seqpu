@@ -5,13 +5,13 @@
     <Version>5</Version>
     <Device>gw1nr9-000</Device>
     <FileList>
-        <File path="/home/pepijn/code/74xx-liberty/cpu/alu.vhd" type="file.source" enable="1"/>
-        <File path="/home/pepijn/code/74xx-liberty/cpu/inc.vhd" type="file.source" enable="1"/>
-        <File path="/home/pepijn/code/74xx-liberty/cpu/cpu.vhd" type="file.source" enable="1"/>
+        <File path="/home/pepijn/code/74xx-liberty/seqpu/alu.vhd" type="file.source" enable="1"/>
+        <File path="/home/pepijn/code/74xx-liberty/seqpu/inc.vhd" type="file.source" enable="1"/>
+        <File path="/home/pepijn/code/74xx-liberty/seqpu/cpu.vhd" type="file.source" enable="1"/>
         <File path="src/cpu.cst" type="file.cst" enable="1"/>
         <File path="src/cpu.sdc" type="file.sdc" enable="1"/>
         <File path="src/top.vhd" type="file.source" enable="1"/>
-        <File path="/home/pepijn/code/74xx-liberty/cpu/bram.v" type="file.source" enable="1"/>
-        <File path="/home/pepijn/code/74xx-liberty/cpu/rom.mem" type="file.other" enable="1"/>
+        <File path="/home/pepijn/code/74xx-liberty/seqpu/bram.v" type="file.source" enable="1"/>
+        <File path="/home/pepijn/code/74xx-liberty/seqpu/rom.mem" type="file.other" enable="1"/>
     </FileList>
 </Project>

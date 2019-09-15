@@ -1,4 +1,4 @@
-%define slide_size 10
+%define slide_size 600
 %define returnpointer 0x1000
 %define slide_src 0x1001
 %define slide_dest 0x1002
@@ -165,23 +165,3 @@ ld
 b pc
 
 slides:
-lit 0
-lit 1
-lit 2
-lit 3
-lit 4
-lit 5
-lit 6
-lit 7
-lit 8
-lit 9
-lit 10
-lit 11
-lit 12
-lit 13
-lit 14
-lit 15
-lit 16
-lit 17
-lit 18
-lit 19

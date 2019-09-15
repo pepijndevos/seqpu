@@ -1,4 +1,4 @@
-SOURCES=alu.vhd inc.vhd cpu.vhd
+SOURCES=alu.vhd inc.vhd cpu.vhd display.vhd vga_controller.vhd
 
 ifdef SYMBIOTIC_LICENSE
 		YOSYSARGS=-p "verific -vhdl ${SOURCES}; verific -import $*"
@@ -8,6 +8,7 @@ endif
 
 %.mem: %.asm
 	python asm/asm.py $< > $@
+	cat presentation.mem >> $@
 
 %_rtl.il: %.vhd ${SOURCES}
 	yosys -q ${YOSYSARGS} -p "script ../synth_74.ys; dump -o $@"
@@ -26,7 +27,7 @@ endif
 
 bram.v: rom.mem
 
-%.vvp: %.v %_tb.v bram.v 74ac.v ../74_models.v
+%.vvp: %.v %_tb.v bram.v tilerom.v 74ac.v ../74_models.v
 	iverilog -o $@ $^
 
 %.vcd: %.vvp

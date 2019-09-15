@@ -78,47 +78,4 @@ begin
     end if;
   end process;
 
-  formal_gen : if formal generate
-    signal last_op : std_logic_vector(2 downto 0);
-    signal a_sr : unsigned(7 downto 0);
-    signal b_sr : unsigned(7 downto 0);
-    signal y_sr : unsigned(7 downto 0);
-    signal c_sr : std_logic;
-  begin
-    process(clk)
-    begin
-      if rising_edge(clk) then
-        last_op <= opcode;
-        a_sr <= a & a_sr(7 downto 1);
-        b_sr <= b & b_sr(7 downto 1);
-        y_sr <= y & y_sr(7 downto 1);
-        c_sr <= c;
-      end if;
-    end process;
-
-    -- set all declarations to run on clk
-    default clock is rising_edge(clk);
-    -- restrict reset to be a repeating sequence of 011111111011111111...
-    restrict {{rst_n = '0'; (rst_n = '1')[*8]}[+]};
-    -- assume that the opcode does not change while not in reset
-    assume always {rst_n = '0'; rst_n = '1'} |->
-      opcode = last_op until rst_n = '0';
-    -- assert that after 8 cycles each ALU op produces the correct output
-    op_add: assert always {opcode = "000" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = a_sr+b_sr;
-    op_sub: assert always {opcode = "001" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = a_sr-b_sr;
-    op_or: assert always {opcode = "010" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = (a_sr or b_sr);
-    op_and: assert always {opcode = "011" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = (a_sr and b_sr);
-    op_xor: assert always {opcode = "100" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = (a_sr xor b_sr);
-    op_eq: assert always {opcode = "101" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = a_sr and (c_sr = '1') = (a_sr = b_sr);
-    op_gt: assert always {opcode = "110" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = a_sr and (c_sr = '1') = (a_sr > b_sr);
-    op_nul: assert always {opcode = "111" and rst_n = '1'; rst_n = '0'} |->
-      y_sr = b_sr and c_sr = '0';
-  end generate;
 end rtl;

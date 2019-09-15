@@ -13,5 +13,9 @@
         <File path="src/top.vhd" type="file.source" enable="1"/>
         <File path="/home/pepijn/code/74xx-liberty/seqpu/bram.v" type="file.source" enable="1"/>
         <File path="/home/pepijn/code/74xx-liberty/seqpu/rom.mem" type="file.other" enable="1"/>
+        <File path="src/gowin_pll/gowin_pll.vhd" type="file.source" enable="1"/>
+        <File path="/home/pepijn/code/74xx-liberty/seqpu/vga_controller.vhd" type="file.source" enable="1"/>
+        <File path="/home/pepijn/code/74xx-liberty/seqpu/tilerom.v" type="file.source" enable="1"/>
+        <File path="/home/pepijn/code/74xx-liberty/seqpu/display.vhd" type="file.source" enable="1"/>
     </FileList>
 </Project>

@@ -8,6 +8,7 @@ entity display is
     rst_n : in std_logic;
     h_sync : out std_logic;
     v_sync : out std_logic;
+    disp_ena : out std_logic;
     vramaddress : out std_logic_vector(15 downto 0);
     twochars : in std_logic_vector(15 downto 0);
     pixel : out std_logic
@@ -15,11 +16,15 @@ entity display is
 end display;
 
 architecture behavior of display is
-  signal disp_ena : std_logic;
   signal column : integer;
   signal row : integer;
   signal col2x : unsigned(9 downto 0);
   signal row2x : unsigned(9 downto 0);
+  signal ucol : unsigned(9 downto 0);
+  signal urow : unsigned(9 downto 0);
+  signal coladdr : unsigned(9 downto 0);
+  signal rowaddr : unsigned(9 downto 0);
+  signal row40x : unsigned(15 downto 0);
   signal tileaddress : std_logic_vector(10 downto 0);
   signal char : std_logic_vector(7 downto 0);
   signal char_row : std_logic_vector(7 downto 0);
@@ -84,13 +89,20 @@ begin
   );
 
   -- 8x8 bitmap is upscaled 2x
-  col2x <= to_unsigned(column/2, 10);
-  row2x <= to_unsigned(row/2, 10);
   -- 640/16=40
   -- 480/16=30
   -- tile size = 8x8
   -- two chars per word
-  vramaddress <= std_logic_vector(resize((row2x/8)*40 + col2x/16, 16));
+  -- (row2x/8)*40 + col2x/16
+  ucol <= to_unsigned(column, 10);
+  urow <= to_unsigned(row, 10);
+  col2x <= shift_right(ucol, 1);
+  row2x <= shift_right(urow, 1);
+  rowaddr <= shift_right(row2x,3); --/8
+  coladdr <= shift_right(col2x, 4); --/16 (two chars per word)
+  -- x*40 = (x * 8) + (x * 32) = (x << 3) + (x << 5)
+  row40x <= resize(shift_left(rowaddr, 2) + shift_left(rowaddr, 4), 16);
+  vramaddress <= std_logic_vector(row40x + coladdr);
 
   -- col2x(2 downto 0) = char col, col(3) = high/low byte
   char <= twochars(7 downto 0) when col2x(3) = '1' else twochars(15 downto 8);

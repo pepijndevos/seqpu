@@ -2,7 +2,7 @@ module bram(input clk, wren_n, oen_n,
             input [15:0] rdaddress, wraddress, data_in,
             output reg [15:0] data_out);
 
-parameter bits = 14;
+parameter bits = 12;
 
 reg [15:0] memory [0:(1<<bits)-1];
 // fuck Gowin FPGA Designer software

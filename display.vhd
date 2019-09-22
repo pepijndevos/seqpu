@@ -32,6 +32,7 @@ architecture behavior of display is
   signal tileaddress : std_logic_vector(10 downto 0);
   signal char : std_logic_vector(7 downto 0);
   signal char_row : std_logic_vector(7 downto 0);
+  signal disp_ena_sig : std_logic;
 
 component bram
   port (
@@ -85,7 +86,7 @@ begin
 		reset_n => rst_n,
 		h_sync => h_sync,
 		v_sync => v_sync,
-		disp_ena => disp_ena,
+		disp_ena => disp_ena_sig,
 		column => column,
 		row => row,
 		n_blank => open,
@@ -126,6 +127,7 @@ begin
     data_out => char_row
   );
   -- t-0
-  pixel <= not char_row(to_integer(col2x(2 downto 0))) when disp_ena = '1' else '0';
+  pixel <= not char_row(to_integer(col2x(2 downto 0))) when disp_ena_sig = '1' else '0';
+  disp_ena <= disp_ena_sig;
 
 end;

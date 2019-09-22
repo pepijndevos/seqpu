@@ -1,5 +1,5 @@
 SOURCES=alu.vhd inc.vhd cpu.vhd display.vhd vga_controller.vhd ice40_top.vhd
-VSOURCES=bram.v tilerom.v icepll.v
+VSOURCES=bram.v bram10.v tilerom.v icepll.v
 
 ifdef SYMBIOTIC_LICENSE
 		YOSYSARGS=-p "verific -vhdl ${SOURCES}; verific -import $*"

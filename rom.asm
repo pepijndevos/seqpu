@@ -1,15 +1,16 @@
 %define slide_size 600
-%define btnio 0x0fff
-%define returnpointer 0x0ffe
-%define slide_src 0x0ffd
-%define slide_dest 0x0ffc
-%define slide_end 0x10ffb
-%define slide_index 0x0ffa
-%define vram 0x1000
+%define returnpointer 0x1ffe
+%define slide_src 0x1ffd
+%define slide_dest 0x1ffc
+%define slide_end 0x1ffb
+%define slide_index 0x1ffa
+%define vram 0x2000
+// sign extended to 0xffff
+%define btnio 0x01ff
 
 // fake button input
 b a 1
-lit btnio
+b b btnio
 xch b
 st
 
@@ -22,8 +23,18 @@ st
 // load slide 0
 lit slides
 b a
-//lit 600
-//add a 
+lit 600
+add a 
+add a 
+add a 
+add a 
+add a 
+add a 
+add a 
+add a 
+add a 
+add a 
+add a 
 lit slide_src
 xch b
 st // store slide address
@@ -43,7 +54,7 @@ xch b
 lit ret02
 b a
 st // return address
-lit btnio
+b b btnio
 xch b
 ld
 b a

@@ -5,7 +5,7 @@
 //Part Number: GW1NR-LV9QN88C6/I5
 //Created Time: Mon Sep  9 11:16:22 2019
 
-IO_LOC "clk" 35;
+IO_LOC "clk_100" 63;
 IO_LOC "led[0]" 79;
 IO_LOC "led[1]" 80;
 IO_LOC "led[2]" 81;
@@ -15,3 +15,12 @@ IO_LOC "led[5]" 84;
 IO_LOC "led[6]" 85;
 IO_LOC "led[7]" 86;
 IO_LOC "rst_n" 77;
+
+IO_LOC "P1B1" 47;
+IO_LOC "P1B2" 41;
+IO_LOC "P1B3" 38;
+IO_LOC "P1B4" 40;
+IO_LOC "P1B7" 36;
+IO_LOC "P1B8" 42;
+IO_LOC "P1B9" 39;
+IO_LOC "P1B10" 37;

@@ -50,6 +50,18 @@ component bram
 );
 end component;
 
+component bram10
+  port (
+      clk : in std_logic;
+      wren_n : in std_logic;
+      oen_n : in std_logic;
+      rdaddress : in std_logic_vector(15 downto 0);
+      wraddress : in std_logic_vector(15 downto 0);
+      data_in : in std_logic_vector(15 downto 0);
+      data_out : out std_logic_vector(15 downto 0)
+);
+end component;
+
 component pll
     port (
         clock_in: in std_logic;
@@ -86,8 +98,8 @@ mypll: pll
     pixel => pixel
   );
 
-  mem_wren_n <= '0' when wren_n = '0' and address(12) = '0' else '1';
-  memaddress <= "0000" & address(11 downto 0);
+  mem_wren_n <= '0' when wren_n = '0' and address(13) = '0' else '1';
+  memaddress <= "000" & address(12 downto 0);
   mem: bram port map (
     clk => clk_25,
     wren_n => mem_wren_n,
@@ -98,8 +110,8 @@ mypll: pll
     data_out => data_in
   );
 
-  vram_wren_n <= '0' when wren_n = '0' and address(12) = '1' else '1';
-  vramwraddress <= "0000" & address(11 downto 0);
+  vram_wren_n <= '0' when wren_n = '0' and address(13) = '1' else '1';
+  vramwraddress <= "000000" & address(9 downto 0);
   vram: bram port map (
     clk => clk_25,
     wren_n => vram_wren_n,

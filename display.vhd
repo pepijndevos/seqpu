@@ -19,8 +19,12 @@ architecture behavior of display is
   signal column : integer;
   signal row : integer;
   signal col2x : unsigned(9 downto 0);
+  signal col2xt1 : unsigned(9 downto 0);
+  signal col2xt2 : unsigned(9 downto 0);
   signal row2x : unsigned(9 downto 0);
   signal ucol : unsigned(9 downto 0);
+  signal ucolt1 : unsigned(9 downto 0);
+  signal ucolt2 : unsigned(9 downto 0);
   signal urow : unsigned(9 downto 0);
   signal coladdr : unsigned(9 downto 0);
   signal rowaddr : unsigned(9 downto 0);
@@ -88,6 +92,7 @@ begin
 		n_sync => open
   );
 
+  -- t-2
   -- 8x8 bitmap is upscaled 2x
   -- 640/16=40
   -- 480/16=30
@@ -95,17 +100,22 @@ begin
   -- two chars per word
   -- (row2x/8)*40 + col2x/16
   ucol <= to_unsigned(column, 10);
+  ucolt1 <= to_unsigned(column+1, 10);
+  ucolt2 <= to_unsigned(column+2, 10);
   urow <= to_unsigned(row, 10);
   col2x <= shift_right(ucol, 1);
+  col2xt1 <= shift_right(ucolt1, 1);
+  col2xt2 <= shift_right(ucolt2, 1);
   row2x <= shift_right(urow, 1);
   rowaddr <= shift_right(row2x,3); --/8
-  coladdr <= shift_right(col2x, 4); --/16 (two chars per word)
+  coladdr <= shift_right(col2xt2, 4); --/16 (two chars per word)
   -- x*40 = (x * 8) + (x * 32) = (x << 3) + (x << 5)
   row40x <= resize(shift_left(rowaddr, 2) + shift_left(rowaddr, 4), 16);
   vramaddress <= std_logic_vector(row40x + coladdr);
 
+  -- t-1
   -- col2x(2 downto 0) = char col, col(3) = high/low byte
-  char <= twochars(7 downto 0) when col2x(3) = '1' else twochars(15 downto 8);
+  char <= twochars(7 downto 0) when col2xt1(3) = '1' else twochars(15 downto 8);
   -- row(2 downto 0) = char row
   tileaddress <= char & std_logic_vector(row2x(2 downto 0));
 
@@ -115,7 +125,7 @@ begin
     address => tileaddress,
     data_out => char_row
   );
-
-  pixel <= char_row(to_integer(col2x(2 downto 0)));
+  -- t-0
+  pixel <= not char_row(to_integer(col2x(2 downto 0))) when disp_ena = '1' else '0';
 
 end;

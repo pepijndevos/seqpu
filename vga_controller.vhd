@@ -58,30 +58,30 @@ BEGIN
 	n_sync <= '0';   --no sync on green
 	
 	PROCESS(pixel_clk, reset_n)
-		VARIABLE h_count	:	INTEGER RANGE 0 TO h_period - 1 := 0;  --horizontal counter (counts the columns)
-		VARIABLE v_count	:	INTEGER RANGE 0 TO v_period - 1 := 0;  --vertical counter (counts the rows)
+		VARIABLE h_count	:	INTEGER RANGE -h_bp TO h_period - 1 - h_bp := -h_bp;  --horizontal counter (counts the columns)
+		VARIABLE v_count	:	INTEGER RANGE -v_bp TO v_period - 1 - v_bp := -v_bp;  --vertical counter (counts the rows)
 	BEGIN
 	
 		IF(reset_n = '0') THEN		--reset asserted
-			h_count := 0;				--reset horizontal counter
-			v_count := 0;				--reset vertical counter
+			h_count := -h_bp;				--reset horizontal counter
+			v_count := -v_bp;				--reset vertical counter
 			h_sync <= NOT h_pol;		--deassert horizontal sync
 			v_sync <= NOT v_pol;		--deassert vertical sync
 			disp_ena <= '0';			--disable display
-			column <= 0;				--reset column pixel coordinate
-			row <= 0;					--reset row pixel coordinate
+			column <= -h_bp;				--reset column pixel coordinate
+			row <= -v_bp;					--reset row pixel coordinate
 			
 		ELSIF(pixel_clk'EVENT AND pixel_clk = '1') THEN
 
 			--counters
-			IF(h_count < h_period - 1) THEN		--horizontal counter (pixels)
+			IF(h_count < h_period - 1 - h_bp) THEN		--horizontal counter (pixels)
 				h_count := h_count + 1;
 			ELSE
-				h_count := 0;
-				IF(v_count < v_period - 1) THEN	--veritcal counter (rows)
+				h_count := -h_bp;
+				IF(v_count < v_period - 1 - v_bp) THEN	--veritcal counter (rows)
 					v_count := v_count + 1;
 				ELSE
-					v_count := 0;
+					v_count := -v_bp;
 				END IF;
 			END IF;
 
@@ -100,15 +100,15 @@ BEGIN
 			END IF;
 			
 			--set pixel coordinates
-			IF(h_count < h_pixels) THEN  	--horiztonal display time
+			--IF(h_count < h_pixels) THEN  	--horiztonal display time
 				column <= h_count;			--set horiztonal pixel coordinate
-			END IF;
-			IF(v_count < v_pixels) THEN	--vertical display time
+			--END IF;
+			--IF(v_count < v_pixels) THEN	--vertical display time
 				row <= v_count;				--set vertical pixel coordinate
-			END IF;
+			--END IF;
 
 			--set display enable output
-			IF(h_count < h_pixels AND v_count < v_pixels) THEN  	--display time
+			IF(h_count >= 0 AND h_count < h_pixels AND v_count >= 0 AND v_count < v_pixels) THEN  	--display time
 				disp_ena <= '1';											 	--enable display
 			ELSE																	--blanking time
 				disp_ena <= '0';												--disable display

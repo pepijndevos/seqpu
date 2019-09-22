@@ -3,8 +3,18 @@
 //File Title: Physical Constraints file
 //GOWIN Version: V1.9.1.01Beta
 //Part Number: GW1NR-LV9QN88C6/I5
-//Created Time: Mon Sep  9 11:16:22 2019
+//Created Time: Sun Sep 22 16:26:57 2019
 
+IO_LOC "P1B10" 37;
+IO_LOC "P1B1" 47;
+IO_LOC "P1B2" 41;
+IO_LOC "P1B3" 38;
+IO_LOC "P1B4" 40;
+IO_LOC "P1B7" 36;
+IO_LOC "P1B8" 42;
+IO_LOC "P1B9" 39;
+IO_LOC "btn1" 76;
+IO_LOC "btn2" 75;
 IO_LOC "clk_100" 63;
 IO_LOC "led[0]" 79;
 IO_LOC "led[1]" 80;
@@ -15,12 +25,5 @@ IO_LOC "led[5]" 84;
 IO_LOC "led[6]" 85;
 IO_LOC "led[7]" 86;
 IO_LOC "rst_n" 77;
-
-IO_LOC "P1B1" 47;
-IO_LOC "P1B2" 41;
-IO_LOC "P1B3" 38;
-IO_LOC "P1B4" 40;
-IO_LOC "P1B7" 36;
-IO_LOC "P1B8" 42;
-IO_LOC "P1B9" 39;
-IO_LOC "P1B10" 37;
+IO_PORT "btn1"  PULL_MODE=NONE;
+IO_PORT "btn2"  PULL_MODE=NONE;

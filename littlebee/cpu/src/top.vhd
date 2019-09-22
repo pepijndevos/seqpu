@@ -8,7 +8,8 @@ entity top is
     rst_n : in std_logic;
     led : out std_logic_vector(7 downto 0);
     --P1A1, P1A2, P1A3, P1A4, P1A7, P1A8, P1A9, P1A10: out std_logic;
-    P1B1, P1B2, P1B3, P1B4, P1B7, P1B8, P1B9, P1B10: out std_logic
+    P1B1, P1B2, P1B3, P1B4, P1B7, P1B8, P1B9, P1B10: out std_logic;
+    btn1, btn2 : in std_logic
   );
 end top;
 
@@ -23,6 +24,9 @@ architecture behavior of top is
   signal oen_n : std_logic;
   signal mem_wren_n : std_logic;
   signal vram_wren_n : std_logic;
+
+  signal io : std_logic_vector(15 downto 0);
+  signal dinmux : std_logic_vector(15 downto 0);
 
 
   signal disp_ena : std_logic;
@@ -66,11 +70,14 @@ mypll: Gowin_PLL
         clkin => clk_100
     );
 
-  dut: entity work.cpu port map (
+  io <= "00000000000000" & btn2 & btn1;
+  dinmux <= io when address = x"ffff" else data_in;
+
+  core: entity work.cpu port map (
     clk => clk_25,
     rst_n => rst_n,
     address => address,
-    data_in => data_in,
+    data_in => dinmux,
     data_out => data_out,
     wren_n => wren_n,
     oen_n => oen_n
@@ -138,7 +145,10 @@ P1B10 <= pixel;
   process(clk_25)
   begin
     if rising_edge(clk_25) then
-      led <= address(7 downto 0);
+      --led <= data_in(7 downto 0);
+     led(0) <= btn1;
+     led(1) <= btn2;
+     led(7 downto 2) <= "000000";
     end if;
   end process;
 

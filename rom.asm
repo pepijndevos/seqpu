@@ -15,26 +15,16 @@ xch b
 st
 
 // set slide_index to 0
-b a 0
-lit slide_index
-xch b
-st
+//b a 0
+//lit slide_index
+//xch b
+//st
 
 // load slide 0
 lit slides
 b a
-lit 600
-add a 
-add a 
-add a 
-add a 
-add a 
-add a 
-add a 
-add a 
-add a 
-add a 
-add a 
+//lit 600
+//add a 
 lit slide_src
 xch b
 st // store slide address
@@ -51,7 +41,7 @@ b pc
 button_loop:
 lit returnpointer
 xch b
-lit ret02
+lit releaseloop
 b a
 st // return address
 b b btnio
@@ -66,7 +56,26 @@ lit prevSlide
 b pcc // prevSlide if button 1
 lit button_loop
 b pc // else loop
-ret02:
+
+releaseloop:
+// wair for a while
+b a 0x1ff // set counter
+waitloop:
+sub a 1
+gt a 0
+lit waitloop
+b pcc
+// wait until button is released
+b b btnio
+xch b
+ld
+b a
+eq a 0 // no buttons
+lit released
+b pcc // nextSlide if button 1
+lit releaseloop
+b pc // else loop
+released:
 
 lit returnpointer
 xch b
